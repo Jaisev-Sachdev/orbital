@@ -4,14 +4,12 @@ import { DataTable } from "~/components/data-table"
 import { SectionCards } from "~/components/section-cards"
 import { SiteHeader } from "~/components/site-header"
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar"
-// 1. Import the TooltipProvider
 import { TooltipProvider } from "~/components/ui/tooltip" 
 
 import data from "./data.json"
 
 export default function Page() {
   return (
-    // 2. Wrap everything in the TooltipProvider
     <TooltipProvider>
       <SidebarProvider
         style={

@@ -13,7 +13,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon } from "lucide-react"
+import { Calendar, Network, GraduationCap, Scale, LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon } from "lucide-react"
+import { NetworkResources } from "node:inspector/promises"
 
 const data = {
   user: {
@@ -23,42 +24,42 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
+      title: "Planner",
       url: "#",
       icon: (
-        <LayoutDashboardIcon
+        < Calendar
         />
       ),
     },
     {
-      title: "Lifecycle",
+      title: "Modules",
       url: "#",
       icon: (
-        <ListIcon
+        < FolderIcon
         />
       ),
     },
     {
-      title: "Analytics",
+      title: "Prerequisites",
       url: "#",
       icon: (
-        <ChartBarIcon
+        <Network
         />
       ),
     },
     {
-      title: "Projects",
+      title: "Graduation",
       url: "#",
       icon: (
-        <FolderIcon
+        <GraduationCap
         />
       ),
     },
     {
-      title: "Team",
+      title: "Compare",
       url: "#",
       icon: (
-        <UsersIcon
+        <Scale
         />
       ),
     },

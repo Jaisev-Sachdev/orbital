@@ -1,4 +1,4 @@
-import { Welcome} from "../welcome/welcome";
+import { Welcome} from "../components/welcome";
 import { Link } from "react-router-dom";
 
 export default function Home() {
@@ -8,7 +8,7 @@ export default function Home() {
         <Link to="/">Home</Link> | {" "} 
         <Link to="/login">Login</Link> | {" "}
         <Link to="/onboarding">Start Onboarding</Link> | {" "}
-        <Link to="/dashboard">Dashboard</Link> | {" "} {/* Add this */}
+        <Link to="/dashboard">Dashboard</Link> | {" "} 
         <Link to="/signup">Signup</Link>
       </nav>
 

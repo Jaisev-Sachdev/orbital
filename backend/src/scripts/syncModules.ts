@@ -66,4 +66,7 @@ async function syncModules() {
   }
 }
 
-syncModules();
+syncModules().catch((err) => {
+  console.error('syncModules failed:', err);
+  process.exitCode = 1;
+});

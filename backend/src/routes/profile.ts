@@ -8,9 +8,14 @@ const router = Router();
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const { major, faculty, yearOfStudy, cohortYear } = req.body;
 
-  const parsedYearOfStudy = typeof yearOfStudy === 'string'
-    ? Number.parseInt(yearOfStudy, 10)
-    : yearOfStudy;
+  const parsedYearOfStudy = (() => {
+    if (typeof yearOfStudy === 'string') {
+      const trimmed = yearOfStudy.trim();
+      if (!/^\d+$/.test(trimmed)) return NaN;
+      return Number.parseInt(trimmed, 10);
+    }
+    return yearOfStudy;
+  })();
 
   if (
     typeof major !== 'string' || major.trim().length === 0 ||

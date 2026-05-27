@@ -99,7 +99,7 @@ router.post('/modules', requireAuth, async (req: AuthRequest, res: Response) => 
   });
 
   res.json({ message: `${added.count} module(s) added`, count: added.count });
-
+}); 
 // GET /profile/modules — list completed modules
 router.get('/modules', requireAuth, async (req: AuthRequest, res: Response) => {
   const profile = await prisma.profile.findUnique({

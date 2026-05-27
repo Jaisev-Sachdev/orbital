@@ -2,7 +2,7 @@ import 'dotenv/config';
 import axios from 'axios';
 import prisma from '../lib/prisma';
 
-const ACADEMIC_YEAR = '2025-2026';
+const ACADEMIC_YEAR = process.env.NUSMODS_ACADEMIC_YEAR ?? '2025-2026';
 const BASE_URL = `https://api.nusmods.com/v2/${ACADEMIC_YEAR}`;
 
 async function syncModules() {

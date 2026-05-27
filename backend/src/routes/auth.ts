@@ -13,15 +13,23 @@ const router = Router();
 router.post('/register', async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    res.status(400).json({ error: 'Valid email and password are required' });
+    return;
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedPassword = password.trim();
+
+  if (!normalizedEmail || !normalizedPassword) {
     res.status(400).json({ error: 'Valid email and password are required' });
     return;
   }
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(normalizedPassword, 10);
     const user = await prisma.user.create({
-      data: { email: email.toLowerCase().trim(), password: hashedPassword }
+      data: { email: normalizedEmail, password: hashedPassword }
     });
     res.status(201).json({ message: 'User created successfully', userId: user.id });
   } catch (error: any) {
@@ -37,18 +45,26 @@ router.post('/register', async (req: Request, res: Response) => {
 router.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
+  if (typeof email !== 'string' || typeof password !== 'string') {
     res.status(400).json({ error: 'Valid email and password are required' });
     return;
   }
 
-  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedPassword = password.trim();
+
+  if (!normalizedEmail || !normalizedPassword) {
+    res.status(400).json({ error: 'Valid email and password are required' });
+    return;
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) {
     res.status(401).json({ error: 'Invalid credentials' });
     return;
   }
 
-  const passwordMatch = await bcrypt.compare(password, user.password);
+  const passwordMatch = await bcrypt.compare(normalizedPassword, user.password);
   if (!passwordMatch) {
     res.status(401).json({ error: 'Invalid credentials' });
     return;

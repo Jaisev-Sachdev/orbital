@@ -71,6 +71,16 @@ router.post('/modules', requireAuth, async (req: AuthRequest, res: Response) => 
     return;
   }
 
+  const normalizedCodes = moduleCodes
+    .filter((code): code is string => typeof code === 'string')
+    .map(code => code.toUpperCase().trim())
+    .filter(code => code.length > 0);
+
+  if (normalizedCodes.length !== moduleCodes.length) {
+    res.status(400).json({ error: 'moduleCodes must be an array of non-empty strings' });
+    return;
+  }
+
   const profile = await prisma.profile.findUnique({
     where: { userId: req.userId! }
   });
@@ -81,15 +91,14 @@ router.post('/modules', requireAuth, async (req: AuthRequest, res: Response) => 
   }
 
   const added = await prisma.completedModule.createMany({
-    data: moduleCodes.map((code: string) => ({
+    data: normalizedCodes.map(moduleCode => ({
       profileId: profile.id,
-      moduleCode: code.toUpperCase().trim()
+      moduleCode
     })),
     skipDuplicates: true
   });
 
   res.json({ message: `${added.count} module(s) added`, count: added.count });
-});
 
 // GET /profile/modules — list completed modules
 router.get('/modules', requireAuth, async (req: AuthRequest, res: Response) => {

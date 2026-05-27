@@ -3,42 +3,54 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma';
 
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables');
+}
+
 const router = Router();
 
 // POST /auth/register
 router.post('/register', async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    res.status(400).json({ error: 'Email and password are required' });
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    res.status(400).json({ error: 'Valid email and password are required' });
     return;
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-    res.status(400).json({ error: 'Email already in use' });
+  const normalizedEmail = email.toLowerCase().trim();
+  const trimmedPassword = password.trim();
+
+  if (normalizedEmail.length === 0 || trimmedPassword.length === 0) {
+    res.status(400).json({ error: 'Valid email and password are required' });
     return;
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const user = await prisma.user.create({
-    data: { email, password: hashedPassword }
-  });
-
-  res.status(201).json({ message: 'User created successfully', userId: user.id });
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: { email: normalizedEmail, password: hashedPassword }
+    });
+    res.status(201).json({ message: 'User created successfully', userId: user.id });
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Email already in use' });
+      return;
+    }
+    res.status(500).json({ error: 'Something went wrong' });
+  }
 });
 
 // POST /auth/login
 router.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    res.status(400).json({ error: 'Email and password are required' });
+  if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
+    res.status(400).json({ error: 'Valid email and password are required' });
     return;
   }
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
   if (!user) {
     res.status(401).json({ error: 'Invalid credentials' });
     return;

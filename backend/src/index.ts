@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth';
 import profileRoutes from './routes/profile';
+import moduleRoutes from './routes/modules';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.get('/health', (req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/profile', profileRoutes);
+app.use('/modules', moduleRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

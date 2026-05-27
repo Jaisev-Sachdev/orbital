@@ -8,15 +8,35 @@ const router = Router();
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const { major, faculty, yearOfStudy, cohortYear } = req.body;
 
-  if (!major || !faculty || !yearOfStudy || !cohortYear) {
-    res.status(400).json({ error: 'major, faculty, yearOfStudy and cohortYear are required' });
+  const parsedYearOfStudy = typeof yearOfStudy === 'string'
+    ? Number.parseInt(yearOfStudy, 10)
+    : yearOfStudy;
+
+  if (
+    typeof major !== 'string' || major.trim().length === 0 ||
+    typeof faculty !== 'string' || faculty.trim().length === 0 ||
+    !Number.isInteger(parsedYearOfStudy) ||
+    typeof cohortYear !== 'string' || cohortYear.trim().length === 0
+  ) {
+    res.status(400).json({ error: 'major, faculty, yearOfStudy (integer) and cohortYear are required' });
     return;
   }
 
   const profile = await prisma.profile.upsert({
     where: { userId: req.userId! },
-    update: { major, faculty, yearOfStudy, cohortYear },
-    create: { userId: req.userId!, major, faculty, yearOfStudy, cohortYear }
+    update: {
+      major: major.trim(),
+      faculty: faculty.trim(),
+      yearOfStudy: parsedYearOfStudy,
+      cohortYear: cohortYear.trim()
+    },
+    create: {
+      userId: req.userId!,
+      major: major.trim(),
+      faculty: faculty.trim(),
+      yearOfStudy: parsedYearOfStudy,
+      cohortYear: cohortYear.trim()
+    }
   });
 
   res.json({ message: 'Profile saved', profile });

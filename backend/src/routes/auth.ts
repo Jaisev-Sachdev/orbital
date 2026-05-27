@@ -13,7 +13,15 @@ const router = Router();
 router.post('/register', async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    res.status(400).json({ error: 'Valid email and password are required' });
+    return;
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const trimmedPassword = password.trim();
+
+  if (normalizedEmail.length === 0 || trimmedPassword.length === 0) {
     res.status(400).json({ error: 'Valid email and password are required' });
     return;
   }
@@ -21,7 +29,7 @@ router.post('/register', async (req: Request, res: Response) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { email: email.toLowerCase().trim(), password: hashedPassword }
+      data: { email: normalizedEmail, password: hashedPassword }
     });
     res.status(201).json({ message: 'User created successfully', userId: user.id });
   } catch (error: any) {

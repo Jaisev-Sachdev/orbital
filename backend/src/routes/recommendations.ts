@@ -94,13 +94,18 @@ Respond in JSON only. No explanation outside the JSON. Use this exact format:
       return;
     }
 
-    let recommendations: unknown;
-    try {
-      recommendations = JSON.parse(responseText);
-    } catch {
-      res.status(502).json({ error: 'Upstream model returned invalid JSON' });
-      return;
-    }
+  let recommendations: unknown;
+  const cleanedText = responseText
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '');
+
+  try {
+    recommendations = JSON.parse(cleanedText);
+  } catch {
+    res.status(502).json({ error: 'Upstream model returned invalid JSON' });
+    return;
+  }
 
     res.json({ recommendations });
   } catch {

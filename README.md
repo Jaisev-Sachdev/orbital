@@ -1,4 +1,3 @@
-```
 # Courseway 🎓
 
 **AI-powered NUS academic degree planner**

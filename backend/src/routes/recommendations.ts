@@ -4,10 +4,17 @@ import prisma from '../lib/prisma';
 import requireAuth, { AuthRequest } from '../middleware/requireAuth';
 
 const router = Router();
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+const client = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null;
 
 // POST /recommendations
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
+  if (!client) {
+    res.status(500).json({ error: 'Server configuration error' });
+    return;
+  }
+
   // 1. Fetch user's profile and completed modules
   const profile = await prisma.profile.findUnique({
     where: { userId: req.userId! },
@@ -23,15 +30,15 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
 
   // Extract prefixes from completed modules to infer relevant departments
   const completedPrefixes = [...new Set(
-    completedCodes.map(code => code.match(/^[A-Z]+/)?.[0] ?? '')
-    .filter(p => p.length > 0)
+    completedCodes
+      .map(code => code.match(/^[A-Z]+/)?.[0] ?? '')
+      .filter(p => p.length > 0)
   )];
 
   // 2. Fetch some eligible modules to give the AI context
-// Fetch modules matching those prefixes, fall back to all if no completed modules
   const availableModules = await prisma.module.findMany({
     where: {
-      moduleCode: { 
+      moduleCode: {
         notIn: completedCodes,
       },
       semesters: { isEmpty: false },
@@ -50,7 +57,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
 
 Student profile:
 - Major: ${profile.major}
-- Faculty: ${profile.faculty}  
+- Faculty: ${profile.faculty}
 - Year of study: ${profile.yearOfStudy}
 - Cohort: ${profile.cohortYear}
 - Completed modules: ${completedCodes.length > 0 ? completedCodes.join(', ') : 'None yet'}
@@ -70,18 +77,35 @@ Respond in JSON only. No explanation outside the JSON. Use this exact format:
   }
 ]`;
 
-  // 4. Call the Anthropic API
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1024,
-    messages: [{ role: 'user', content: prompt }]
-  });
+  try {
+    // 4. Call the Anthropic API
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }]
+    });
 
-  // 5. Parse and return the recommendations
-  const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-  const recommendations = JSON.parse(responseText);
+    // 5. Parse and return the recommendations
+    const textBlock = message.content.find((b: any) => b?.type === 'text');
+    const responseText = textBlock?.type === 'text' ? String(textBlock.text) : '';
 
-  res.json({ recommendations });
+    if (!responseText) {
+      res.status(502).json({ error: 'Upstream model returned an empty response' });
+      return;
+    }
+
+    let recommendations: unknown;
+    try {
+      recommendations = JSON.parse(responseText);
+    } catch {
+      res.status(502).json({ error: 'Upstream model returned invalid JSON' });
+      return;
+    }
+
+    res.json({ recommendations });
+  } catch {
+    res.status(502).json({ error: 'Failed to generate recommendations' });
+  }
 });
 
 export default router;

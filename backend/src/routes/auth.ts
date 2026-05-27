@@ -36,8 +36,8 @@ router.post('/login', async (req: Request, res: Response) => {
   if (
     typeof email !== 'string' ||
     typeof password !== 'string' ||
-    !email ||
-    !password
+    email === '' ||
+    password === ''
   ) {
     res.status(400).json({ error: 'Email and password are required' });
     return;

@@ -190,5 +190,3 @@ git add README.md
 git commit -m "docs: add README with setup guide and API documentation"
 git push origin main
 ```
-
-Send me when pushed.

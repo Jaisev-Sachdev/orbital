@@ -5,8 +5,10 @@ import requireAuth, { AuthRequest } from '../middleware/requireAuth';
 
 const router = Router();
 
-const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
-const client = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null;
+if (!process.env.ANTHROPIC_API_KEY) {
+  throw new Error('ANTHROPIC_API_KEY is not defined in environment variables');
+}
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // POST /recommendations
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {

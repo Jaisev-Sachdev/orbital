@@ -1,71 +1,65 @@
+/**
+ * SignupForm  —  app/components/signup-form.tsx
+ *
+ * Changes from original:
+ *   - Raw fetch() → api.post()
+ *   - On success, auto-logs in (calls /auth/login right after register)
+ *     and redirects to /onboarding so the user goes straight to setup
+ *   - Courseway brand styling
+ */
+
 import { useState } from "react"
-import { cn } from "../lib/utils"
+import { useNavigate, Link } from "react-router"
+import { cn } from "~/lib/utils"
+import { useAuth } from "~/context/AuthContext"
+import api from "~/lib/api"
 import { Button } from "./ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card"
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "./ui/field"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
+import { Label } from "./ui/label"
 import { Input } from "./ui/input"
 
-export function SignupForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
+  const navigate = useNavigate()
+  const { login } = useAuth()
+
+  const [email, setEmail]                   = useState("")
+  const [password, setPassword]             = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
-  const [successMessage, setSuccessMessage] = useState("")
+  const [isLoading, setIsLoading]           = useState(false)
+  const [errorMessage, setErrorMessage]     = useState("")
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setErrorMessage("")
-    setSuccessMessage("")
 
-    // Basic frontend validation
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match.")
       setIsLoading(false)
       return
     }
 
+    if (password.length < 6) {
+      setErrorMessage("Password must be at least 6 characters.")
+      setIsLoading(false)
+      return
+    }
+
     try {
-      // Pointing to port 3001 as per your backend docs
-      const response = await fetch("http://localhost:3001/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
+      // 1. Register
+      await api.post("/auth/register", { email, password })
 
-      const data = await response.json()
+      // 2. Auto-login so the user doesn't have to log in again
+      const { data } = await api.post("/auth/login", { email, password })
+      login(data.token, email)
 
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to register. Please try again.")
-      }
-
-      // Success! 
-      setSuccessMessage("Account created successfully! You can now log in.")
-      setEmail("")
-      setPassword("")
-      setConfirmPassword("")
-      
-      setTimeout(() => window.location.href = "/login", 2000)
-
-    } catch (error: any) {
-      setErrorMessage(error.message)
+      // 3. Go straight to onboarding
+      navigate("/onboarding")
+    } catch (err: any) {
+      const msg = err.response?.data?.error
+               || err.response?.data?.message
+               || "Failed to create account. Please try again."
+      setErrorMessage(msg)
     } finally {
       setIsLoading(false)
     }
@@ -73,64 +67,108 @@ export function SignupForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle>Create an account</CardTitle>
-          <CardDescription>
-            Enter your email and a password to get started
+      <Card
+        style={{
+          backgroundColor: "var(--cw-navy-light)",
+          border: "1px solid var(--cw-navy-border)",
+        }}
+      >
+        <CardHeader className="text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <span className="text-2xl font-bold" style={{ color: "var(--cw-teal)" }}>⌘</span>
+            <span className="text-xl font-bold" style={{ color: "var(--cw-white)" }}>Courseway</span>
+          </div>
+          <CardTitle style={{ color: "var(--cw-white)" }}>Create your account</CardTitle>
+          <CardDescription style={{ color: "rgba(240,244,255,0.5)" }}>
+            Start planning your NUS degree journey
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignup}>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="password">Password</FieldLabel>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  required 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)} 
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="confirmPassword">Confirm Password</FieldLabel>
-                <Input 
-                  id="confirmPassword" 
-                  type="password" 
-                  required 
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)} 
-                />
-              </Field>
-              
-              {errorMessage && (
-                <p className="text-sm text-red-500">{errorMessage}</p>
-              )}
-              {successMessage && (
-                <p className="text-sm text-green-500">{successMessage}</p>
-              )}
 
-              <Field>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Creating account..." : "Sign up"}
-                </Button>
-                <FieldDescription className="text-center">
-                  Already have an account? <a href="/login">Log in</a>
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
+        <CardContent>
+          <form onSubmit={handleSignup} className="space-y-4">
+
+            <div className="space-y-2">
+              <Label htmlFor="email" style={{ color: "rgba(240,244,255,0.8)" }}>Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="e0123456@u.nus.edu"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                style={{
+                  backgroundColor: "var(--cw-navy)",
+                  borderColor: "var(--cw-navy-border)",
+                  color: "var(--cw-white)",
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" style={{ color: "rgba(240,244,255,0.8)" }}>Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                style={{
+                  backgroundColor: "var(--cw-navy)",
+                  borderColor: "var(--cw-navy-border)",
+                  color: "var(--cw-white)",
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" style={{ color: "rgba(240,244,255,0.8)" }}>
+                Confirm Password
+              </Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                style={{
+                  backgroundColor: "var(--cw-navy)",
+                  borderColor: "var(--cw-navy-border)",
+                  color: "var(--cw-white)",
+                }}
+              />
+            </div>
+
+            {errorMessage && (
+              <p
+                className="text-sm px-3 py-2 rounded"
+                style={{
+                  color: "#FF4D4F",
+                  backgroundColor: "rgba(255,77,79,0.08)",
+                  border: "1px solid rgba(255,77,79,0.2)",
+                }}
+              >
+                {errorMessage}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full font-semibold"
+              style={{ backgroundColor: "var(--cw-teal)", color: "var(--cw-navy)" }}
+            >
+              {isLoading ? "Creating account…" : "Create account"}
+            </Button>
+
+            <p className="text-center text-sm" style={{ color: "rgba(240,244,255,0.5)" }}>
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                style={{ color: "var(--cw-teal)", textDecoration: "none", fontWeight: 500 }}
+              >
+                Log in
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>

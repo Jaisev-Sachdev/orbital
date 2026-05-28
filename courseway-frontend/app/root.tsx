@@ -1,3 +1,12 @@
+/**
+ * root.tsx — App shell
+ *
+ * Changes from original:
+ *   - Wraps <Outlet> in <AuthProvider> so every route gets auth context
+ *   - Removed Google Fonts link tag (fonts now imported in app.css)
+ *   - Kept ErrorBoundary unchanged
+ */
+
 import {
   isRouteErrorResponse,
   Links,
@@ -9,19 +18,9 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { AuthProvider } from "~/context/AuthContext";
 
-export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
-  },
-];
+export const links: Route.LinksFunction = () => [];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -42,7 +41,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <AuthProvider>
+      <Outlet />
+    </AuthProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
@@ -62,11 +65,20 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
+    <main style={{ padding: "4rem 2rem", color: "var(--cw-white)" }}>
+      <h1 style={{ color: "var(--cw-teal)" }}>{message}</h1>
+      <p style={{ color: "rgba(240,244,255,0.7)" }}>{details}</p>
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
+        <pre
+          style={{
+            padding: "1rem",
+            overflowX: "auto",
+            backgroundColor: "var(--cw-navy-light)",
+            borderRadius: "0.5rem",
+            fontSize: "0.8rem",
+            color: "rgba(240,244,255,0.6)",
+          }}
+        >
           <code>{stack}</code>
         </pre>
       )}

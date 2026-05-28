@@ -11,7 +11,7 @@ export function Welcome() {
 
       {/* Strategic link to the dashboard */}
       <div style={{ marginTop: "2rem" }}>
-        <Link to="/dashboard" style={{ 
+        <Link to="/" style={{ 
           padding: "10px 20px", 
           backgroundColor: "#007bff", 
           color: "white", 

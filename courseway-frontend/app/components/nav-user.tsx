@@ -31,6 +31,13 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
 
+  const handleLogout = () => {
+    // 1. Remove the token from the browser
+    localStorage.removeItem("authToken")
+    // 2. Refresh the page so the dashboard sees the token is gone
+    window.location.href = "/" 
+  }
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>

@@ -1,5 +1,6 @@
 import * as React from "react"
-
+import { Link } from "react-router-dom"
+import { Button } from "~/components/ui/button"
 import { NavDocuments } from "~/components/nav-documents"
 import { NavMain } from "~/components/nav-main"
 import { NavSecondary } from "~/components/nav-secondary"
@@ -14,7 +15,7 @@ import {
   SidebarMenuItem,
 } from "~/components/ui/sidebar"
 import { Calendar, Network, GraduationCap, Scale, LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon } from "lucide-react"
-import { NetworkResources } from "node:inspector/promises"
+
 
 const data = {
   user: {
@@ -149,8 +150,8 @@ const data = {
   ],
   documents: [
     {
-      name: "Data Library",
-      url: "#",
+      name: "Onboarding",
+      url: "../onboarding",
       icon: (
         <DatabaseIcon
         />
@@ -175,7 +176,10 @@ const data = {
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ 
+  isLoggedIn = false, 
+  ...props 
+}: React.ComponentProps<typeof Sidebar> & { isLoggedIn?: boolean }) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -199,7 +203,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {isLoggedIn ? (
+          <NavUser user={data.user} />
+        ) : (
+          <div className="flex flex-col gap-2 p-2">
+            <Button asChild variant="default" className="w-full">
+              <Link to="/login">Log In</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/signup">Sign Up</Link>
+            </Button>
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   )

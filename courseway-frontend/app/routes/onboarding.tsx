@@ -161,10 +161,9 @@ function OnboardingContent() {
         await api.post("/profile/modules", { moduleCodes: formData.modules })
       }
 
-      // 3. Refresh AuthContext so dashboard has up-to-date profile
       await refreshProfile()
 
-      navigate("/dashboard")
+      navigate("/recommendations")
     } catch (err: any) {
       setErrorMessage(
         err.response?.data?.error ||

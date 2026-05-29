@@ -39,7 +39,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       // auth.login() writes to localStorage AND updates AuthContext state
       login(data.token, email)
 
-      navigate("/dashboard")
+      navigate("/..")
     } catch (err: any) {
       const msg = err.response?.data?.error
                || err.response?.data?.message

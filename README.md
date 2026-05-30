@@ -30,6 +30,7 @@ Courseway solves this by integrating directly with the NUSMods public API, build
 | Styling | Tailwind CSS + shadcn/ui |
 | Backend | Node.js + Express + TypeScript |
 | Database | PostgreSQL + Prisma ORM |
+| ORM Version | Prisma 6 (not v7 — v7 config syntax is incompatible) |
 | AI | Anthropic Claude API (claude-sonnet-4) |
 | Module Data | NUSMods Public API (2025-2026) |
 

@@ -9,6 +9,7 @@
  *   - After finishing, calls auth.refreshProfile() to update AuthContext
  *   - Courseway brand applied: navy background, teal accents, JetBrains Mono for module chips
  *   - Cohort year is now a dropdown (AY2022/23 through AY2025/26)
+ *   - Goals saved to localStorage so recommendations page can use them
  */
 
 import { useState, useEffect } from "react"
@@ -160,6 +161,9 @@ function OnboardingContent() {
       if (formData.modules.length > 0) {
         await api.post("/profile/modules", { moduleCodes: formData.modules })
       }
+
+      // 3. Save goals to localStorage so recommendations page can pass them to the AI
+      localStorage.setItem("courseGoals", formData.goals)
 
       await refreshProfile()
 

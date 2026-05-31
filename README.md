@@ -470,8 +470,7 @@ Every PR is reviewed by GitHub Copilot. Issues triaged by severity:
 
 ### CI/CD
 
-> 📌 **[PLACEHOLDER — Insert screenshot of GitHub Actions passing CI here]**
-> 📌 **Note: Add `.github/workflows/ci.yml` to repo before MS1 submission**
+![CI Passing](docs/diagrams/github-actions-ci.png)
 
 ```yaml
 # .github/workflows/ci.yml

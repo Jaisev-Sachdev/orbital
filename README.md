@@ -78,15 +78,7 @@ During onboarding Step 3, students select focus areas (AI/ML, Systems, Exchange 
 
 ---
 
-### Feature 3 — Prerequisite Chain Checker
-
-Students can search any module by code and see its direct prerequisites extracted from NUSMods raw text. The backend applies a regex (`/[A-Z]{2,4}\d{4}[A-Z]*/g`) to the raw NUSMods prerequisite string and returns a clean array of module codes. Students can click any prerequisite chip to chain-search further.
-
-> 📌 **[PLACEHOLDER — Insert prerequisite checker screenshot here]**
-
----
-
-### Feature 4 — NUSMods Module Search
+### Feature 3 — NUSMods Module Search
 
 Real-time search across all 7139 NUS modules. The backend queries PostgreSQL with a case-insensitive OR filter on both `moduleCode` and `title`, returning up to 20 results. Module data was synced from the NUSMods public API using a batch sync script.
 
@@ -94,7 +86,7 @@ Real-time search across all 7139 NUS modules. The backend queries PostgreSQL wit
 
 ---
 
-### Feature 5 — Guided 3-Step Onboarding Flow
+### Feature 4 — Guided 3-Step Onboarding Flow
 
 A multi-step onboarding form that collects profile data, completed modules, and goals before generating a personalised plan. Each step is validated before proceeding. Module search is debounced (300ms) to avoid excessive API calls. On completion, all data is saved to PostgreSQL via the backend API.
 
@@ -102,7 +94,7 @@ A multi-step onboarding form that collects profile data, completed modules, and 
 
 ---
 
-### Feature 6 — User Authentication with Session Persistence
+### Feature 5 — User Authentication with Session Persistence
 
 Full register/login/logout flow with JWT tokens. Passwords are hashed with bcrypt before storage. Tokens are stored in `localStorage` and attached to every request automatically via an Axios interceptor. Protected routes redirect unauthenticated users to login. Tokens expire after 7 days.
 

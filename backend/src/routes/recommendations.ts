@@ -12,10 +12,8 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // POST /recommendations
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
-  if (!client) {
-    res.status(500).json({ error: 'Server configuration error' });
-    return;
-  }
+  // Read goals from request body (sent by frontend from localStorage)
+  const { goals } = req.body;
 
   // 1. Fetch user's profile and completed modules
   const profile = await prisma.profile.findUnique({
@@ -54,7 +52,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
     orderBy: { moduleCode: 'asc' }
   });
 
-  // 3. Build the prompt
+  // 3. Build the prompt — include goals if provided
   const prompt = `You are an academic advisor for NUS (National University of Singapore).
 
 Student profile:
@@ -63,12 +61,13 @@ Student profile:
 - Year of study: ${profile.yearOfStudy}
 - Cohort: ${profile.cohortYear}
 - Completed modules: ${completedCodes.length > 0 ? completedCodes.join(', ') : 'None yet'}
+${goals ? `- Student's goals and focus areas: ${goals}` : ''}
 
 Here are some available modules the student has not yet taken:
 ${availableModules.map(m => `- ${m.moduleCode}: ${m.title} (${m.credits} MCs) | Prerequisites: ${m.prerequisite ?? 'None'}`).join('\n')}
 
 Recommend exactly 3 modules for this student to take next semester.
-Consider: prerequisite satisfaction, workload balance, relevance to their major.
+Consider: prerequisite satisfaction, workload balance, relevance to their major${goals ? ', and the student\'s stated goals and focus areas' : ''}.
 
 Respond in JSON only. No explanation outside the JSON. Use this exact format:
 [
@@ -96,18 +95,18 @@ Respond in JSON only. No explanation outside the JSON. Use this exact format:
       return;
     }
 
-  let recommendations: unknown;
-  const cleanedText = responseText
-    .trim()
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```$/i, '');
+    let recommendations: unknown;
+    const cleanedText = responseText
+      .trim()
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/i, '');
 
-  try {
-    recommendations = JSON.parse(cleanedText);
-  } catch {
-    res.status(502).json({ error: 'Upstream model returned invalid JSON' });
-    return;
-  }
+    try {
+      recommendations = JSON.parse(cleanedText);
+    } catch {
+      res.status(502).json({ error: 'Upstream model returned invalid JSON' });
+      return;
+    }
 
     res.json({ recommendations });
   } catch {

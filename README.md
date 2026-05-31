@@ -56,7 +56,6 @@ Courseway solves this by:
                     └──────────────────┘  └────────────────┘  └────────────────┘
 ```
 
-> 📌 **[PLACEHOLDER — Replace ASCII diagram with proper system architecture diagram image]**
 
 ---
 
@@ -184,9 +183,9 @@ model Module {
 }
 ```
 
-> 📌 **[PLACEHOLDER — Insert ER diagram image here]**
+![ER Diagram](docs/diagrams/er-diagram.png)
 
-> 📌 **[PLACEHOLDER — Insert Use Case diagram image here]**
+![Use Case Diagram](docs/diagrams/use-case-diagram.png)
 
 ---
 

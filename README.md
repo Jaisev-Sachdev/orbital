@@ -453,7 +453,7 @@ Note:     Returns exactly 3 recommendations. Goals are injected into AI prompt.
 
 ### Git Workflow
 
-> 📌 **[PLACEHOLDER — Insert screenshot of GitHub branches / PR list here]**
+![GitHub Branches](docs/diagrams/github-branches.png)
 
 - `main` — stable, protected branch. Direct pushes blocked via branch protection rules.
 - Feature branches — `feat/`, `fix/`, `docs/` prefixes

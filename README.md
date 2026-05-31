@@ -462,7 +462,7 @@ Note:     Returns exactly 3 recommendations. Goals are injected into AI prompt.
 
 ### Copilot Code Review
 
-> 📌 **[PLACEHOLDER — Insert screenshot of a Copilot PR review with comments here]**
+![Copilot Review](docs/diagrams/copilot-review.png)
 
 Every PR is reviewed by GitHub Copilot. Issues triaged by severity:
 - **High** — fixed before merge (JWT_SECRET startup check, input validation, error handling)

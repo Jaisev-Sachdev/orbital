@@ -183,7 +183,12 @@ model Module {
 }
 ```
 
+The entity-relationship diagram below shows the four core models and how they relate. A User has one Profile, a Profile has many CompletedModules, and the Module table stores all NUSMods data independently.
+
 ![ER Diagram](docs/diagrams/er-diagram.png)
+
+
+The use case diagram below shows the interactions between the Student actor and the system, grouped by feature area. External systems (NUSMods API and Anthropic AI) are shown as secondary actors.
 
 ![Use Case Diagram](docs/diagrams/use-case-diagram.png)
 

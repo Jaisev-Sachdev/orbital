@@ -113,7 +113,7 @@ function OnboardingContent() {
     const timer = setTimeout(async () => {
       setIsSearching(true)
       try {
-        const { data } = await api.get(`/modules?search=${moduleSearch}`)
+        const { data } = await api.get(`/modules?search=${encodeURIComponent(moduleSearch)}`)
         setSearchResults(data.modules || [])
       } catch {
         // silent — user just sees no results

@@ -42,7 +42,7 @@ const data = {
     },
     {
       title: "Prerequisites",
-      url: "#",
+      url: "/prerequisites",
       icon: (
         <Network
         />

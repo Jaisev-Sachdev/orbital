@@ -2,7 +2,7 @@
 
 **AI-powered NUS academic degree planner**
 
-NUS Orbital 2026 · Artemis · THE Team
+NUS Orbital 2026 · Apollo · Team Courseway
 
 ---
 
@@ -10,7 +10,7 @@ NUS Orbital 2026 · Artemis · THE Team
 
 Courseway helps NUS students plan their academic journey more effectively. Students input their major, year of study, and completed modules to receive personalised, AI-powered module recommendations that account for prerequisite chains, workload balance, and graduation requirements.
 
-The core philosophy behind Courseway is a **rules engine with an AI brain** — deterministic logic handles prerequisite checking and eligibility, while the AI layer provides personalised explanations, recommendations, and what-if exploration.
+The core philosophy behind Courseway is a **rules engine with an AI brain** — deterministic logic handles prerequisite checking and eligibility, while the AI layer provides personalised explanations, recommendations, and what-if exploration. This ensures recommendations are always grounded in real NUSMods data and never hallucinated.
 
 ---
 
@@ -18,7 +18,11 @@ The core philosophy behind Courseway is a **rules engine with an AI brain** — 
 
 NUS students — especially Year 1s — struggle to plan their module sequence across 4 years. They manually cross-check prerequisites, workload, and graduation requirements across NUSMods, faculty handbooks, and spreadsheets. There is no single tool that gives personalised, validated recommendations grounded in real data.
 
-Courseway solves this by integrating directly with the NUSMods public API, building a structured prerequisite graph, and layering AI on top to explain and personalise — without letting the AI hallucinate eligibility rules.
+Courseway solves this by:
+- Integrating directly with the NUSMods public API (7139 modules)
+- Storing prerequisite relationships in a structured PostgreSQL database
+- Layering Anthropic Claude AI on top to personalise recommendations
+- Keeping the AI and rules engine separate so eligibility is never hallucinated
 
 ---
 
@@ -36,6 +40,67 @@ Courseway solves this by integrating directly with the NUSMods public API, build
 
 ---
 
+## System Architecture
+
+```
+┌─────────────────┐     HTTP/REST      ┌──────────────────────┐
+│  React Frontend  │ ◄────────────────► │   Express Backend     │
+│  (port 5173)     │                    │   (port 3001)         │
+└─────────────────┘                    └──────────┬───────────┘
+                                                   │
+                              ┌────────────────────┼────────────────────┐
+                              │                    │                    │
+                    ┌─────────▼────────┐  ┌───────▼────────┐  ┌───────▼────────┐
+                    │   PostgreSQL DB   │  │  NUSMods API   │  │ Anthropic API  │
+                    │  (Prisma ORM)     │  │  (public)      │  │ (Claude AI)    │
+                    └──────────────────┘  └────────────────┘  └────────────────┘
+```
+
+
+---
+
+## Features
+
+### Feature 1 — AI-Powered Module Recommendation Engine
+
+The backend fetches a student's profile and completed modules, infers relevant module prefixes, builds a filtered pool from 7139 NUSMods modules, and constructs a structured prompt for Claude. The AI returns exactly 3 recommendations with one-sentence explanations grounded in real module data.
+
+![AI Module Suggestions](docs/screenshots/recommendations.png)
+
+---
+
+### Feature 2 — Goal-Aware Recommendations
+
+During onboarding Step 3, students select focus areas (AI/ML, Systems, Exchange Semester etc.) and optionally write free-text goals. These are saved to `localStorage` on completion and passed as a `goals` field in `POST /recommendations`. The backend injects them directly into the AI prompt with an explicit instruction to weight recommendations toward those goals.
+
+![Onboarding Step 3 — Goals](docs/screenshots/onboarding-step3.png)
+
+---
+
+### Feature 3 — NUSMods Module Search
+
+Real-time search across all 7139 NUS modules. The backend queries PostgreSQL with a case-insensitive OR filter on both `moduleCode` and `title`, returning up to 20 results. Module data was synced from the NUSMods public API using a batch sync script.
+
+![Onboarding Step 2 — Module Search](docs/screenshots/onboarding-step2.png)
+
+---
+
+### Feature 4 — Guided 3-Step Onboarding Flow
+
+A multi-step onboarding form that collects profile data, completed modules, and goals before generating a personalised plan. Each step is validated before proceeding. Module search is debounced (300ms) to avoid excessive API calls. On completion, all data is saved to PostgreSQL via the backend API.
+
+![Onboarding Step 1 — Profile](docs/screenshots/onboarding-step1.png)
+
+---
+
+### Feature 5 — User Authentication with Session Persistence
+
+Full register/login/logout flow with JWT tokens. Passwords are hashed with bcrypt before storage. Tokens are stored in `localStorage` and attached to every request automatically via an Axios interceptor. Protected routes redirect unauthenticated users to login. Tokens expire after 7 days.
+
+![Signup Page](docs/screenshots/signup.png)
+
+---
+
 ## Project Structure
 
 ```
@@ -43,37 +108,37 @@ orbital/
 ├── backend/                    # Express REST API
 │   ├── src/
 │   │   ├── routes/
-│   │   │   ├── auth.ts         # Register, login
-│   │   │   ├── profile.ts      # Profile + completed modules
-│   │   │   ├── modules.ts      # Module search + prerequisites
+│   │   │   ├── auth.ts             # Register, login
+│   │   │   ├── profile.ts          # Profile + completed modules
+│   │   │   ├── modules.ts          # Module search + prerequisites
 │   │   │   └── recommendations.ts  # AI recommendations
 │   │   ├── middleware/
-│   │   │   └── requireAuth.ts  # JWT verification middleware
+│   │   │   └── requireAuth.ts      # JWT verification middleware
 │   │   ├── lib/
-│   │   │   └── prisma.ts       # Prisma client singleton
+│   │   │   └── prisma.ts           # Prisma client singleton
 │   │   ├── scripts/
-│   │   │   └── syncModules.ts  # NUSMods data sync script
-│   │   └── index.ts            # Server entry point
+│   │   │   └── syncModules.ts      # NUSMods data sync script
+│   │   └── index.ts                # Server entry point
 │   └── prisma/
-│       ├── schema.prisma       # Database schema
-│       └── migrations/         # Migration history
+│       ├── schema.prisma           # Database schema
+│       └── migrations/             # Migration history
 │
 └── courseway-frontend/         # React Router v7 application
     └── app/
         ├── routes/
-        │   ├── home.tsx         # Landing page
-        │   ├── onboarding.tsx   # 3-step profile setup
+        │   ├── home.tsx             # Landing page
+        │   ├── onboarding.tsx       # 3-step profile setup
         │   ├── recommendations.tsx  # AI recommendations
         │   ├── prerequisites.tsx    # Prerequisite checker
-        │   └── dashboard.tsx    # Dashboard (MS2)
+        │   └── dashboard.tsx        # Dashboard (MS2)
         ├── components/
         │   ├── login-form.tsx
         │   ├── signup-form.tsx
         │   └── logout-button.tsx
         ├── context/
-        │   └── AuthContext.tsx  # Global auth state
+        │   └── AuthContext.tsx      # Global auth state
         └── lib/
-            └── api.ts           # Axios client with interceptors
+            └── api.ts               # Axios client with interceptors
 ```
 
 ---
@@ -84,7 +149,7 @@ orbital/
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
-  password  String                        // bcrypt hashed
+  password  String                        // bcrypt hashed, never stored plain
   createdAt DateTime @default(now())
   profile   Profile?
 }
@@ -105,17 +170,139 @@ model CompletedModule {
   profileId  String
   moduleCode String
   profile    Profile @relation(fields: [profileId], references: [id])
-  @@unique([profileId, moduleCode])
+  @@unique([profileId, moduleCode])   // prevents duplicate entries
 }
 
 model Module {
-  moduleCode   String  @id   // e.g. "CS2040S"
+  moduleCode   String  @id       // e.g. "CS2040S"
   title        String
   credits      Int
   description  String?
-  prerequisite String?       // raw NUSMods prerequisite text
-  semesters    Int[]         // e.g. [1, 2]
+  prerequisite String?           // raw NUSMods prerequisite text
+  semesters    Int[]             // e.g. [1, 2] = offered both sems
 }
+```
+
+The entity-relationship diagram below shows the four core models and how they relate. A User has one Profile, a Profile has many CompletedModules, and the Module table stores all NUSMods data independently.
+
+![ER Diagram](docs/diagrams/er-diagram.png)
+
+
+The use case diagram below shows the interactions between the Student actor and the system, grouped by feature area. External systems (NUSMods API and Anthropic AI) are shown as secondary actors.
+
+![Use Case Diagram](docs/diagrams/use-case-diagram.png)
+
+---
+
+## Design Decisions
+
+### Why PostgreSQL over MongoDB?
+
+Our data is inherently relational — users have profiles, profiles have completed modules, modules have prerequisites. PostgreSQL's foreign keys and joins handle these relationships cleanly and enforce data integrity at the database level. MongoDB's document model would require denormalisation and make queries like "find all modules this user is eligible for" significantly harder to maintain and reason about.
+
+### Why JWT over session-based auth?
+
+JWTs are stateless — the server does not need to store session data in a database or cache, which simplifies the architecture. Tokens are stored in `localStorage` on the client and attached to every outgoing request via an Axios interceptor in `app/lib/api.ts`. On 401 responses, the interceptor automatically clears the stale token and the user is redirected to login via the `ProtectedRoute` component.
+
+### Why a rules engine + AI rather than pure AI?
+
+LLMs can hallucinate prerequisite rules and graduation requirements. By keeping deterministic logic in the backend (prerequisite checking, module eligibility via prefix matching) and using the AI layer only for explanation and personalised ranking, we ensure recommendations are always factually grounded in real NUSMods data. The AI never decides eligibility — only why a module is worth taking.
+
+### Why Prisma over raw SQL?
+
+Prisma generates a fully typed client from the schema, catching type mismatches at compile time. Schema migrations are version-controlled via the `migrations/` folder — any team member runs `npx prisma migrate dev` to get identical database state. This is far safer than raw SQL strings where mistakes only surface at runtime.
+
+---
+
+## Design Patterns
+
+### Singleton — Prisma Client
+The Prisma client is instantiated once in `src/lib/prisma.ts` and exported as a shared module. Instantiating `new PrismaClient()` in every route file would exhaust PostgreSQL's connection pool under concurrent load.
+
+```typescript
+// src/lib/prisma.ts — one instance, shared everywhere
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+export default prisma;
+```
+
+### Middleware Pattern
+JWT verification is extracted into a standalone middleware function rather than duplicated in every protected route. The middleware attaches `userId` to the request object and calls `next()` on success, returning 401 immediately on failure.
+
+```typescript
+// Applied once per route — auth logic never bleeds into business logic
+router.get('/profile', requireAuth, async (req: AuthRequest, res) => {
+  // req.userId guaranteed to exist here
+});
+```
+
+### Interceptor Pattern
+The Axios client uses request and response interceptors to handle token attachment and 401 responses centrally. Without interceptors, every component would need to manually read `localStorage` and handle expired tokens.
+
+```typescript
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('authToken');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+```
+
+---
+
+## Design Principles
+
+### Separation of Concerns
+Each file has one clearly defined responsibility. Routes handle HTTP logic, middleware handles cross-cutting concerns, `lib/prisma.ts` owns the database connection, and `lib/api.ts` owns HTTP client configuration. No business logic leaks across boundaries.
+
+### Fail Fast
+The server validates critical environment variables at startup and throws immediately if they are missing. This prevents the server starting in a broken state.
+
+```typescript
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables');
+}
+```
+
+### Input Normalisation Before Validation
+All user input is normalised (trimmed, lowercased where appropriate) before validation and storage. This prevents edge cases like duplicate accounts with the same email in different cases, or whitespace-only passwords passing validation.
+
+---
+
+## Code Modularisation
+
+The backend uses a flat, responsibility-based folder structure:
+
+| Folder | Responsibility |
+|---|---|
+| `src/routes/` | One file per resource — auth, profile, modules, recommendations |
+| `src/middleware/` | Cross-cutting request handling — JWT auth |
+| `src/lib/` | Shared utilities — database client singleton |
+| `src/scripts/` | One-off operational scripts — NUSMods sync |
+
+Adding a new resource (e.g. `plans.ts` in MS2) requires only creating the file and one line in `index.ts` — no other files need to change.
+
+---
+
+## Code Comments
+
+All non-obvious logic is documented with inline comments:
+
+```typescript
+// Extract prefixes from completed modules to infer relevant departments
+// e.g. ["CS1101S", "MA1521"] → ["CS", "MA"]
+// This focuses the AI context on relevant modules rather than all 7139
+const completedPrefixes = [...new Set(
+  completedCodes.map(code => code.match(/^[A-Z]+/)?.[0] ?? '')
+  .filter(p => p.length > 0)
+)];
+```
+
+```typescript
+// Module codes follow: 2-4 letters + 4 digits + optional letter (e.g. CS2040S)
+// new Set() removes duplicates — codes can appear multiple times in prereq text
+const prereqCodes = module.prerequisite
+  ? [...new Set(module.prerequisite.match(/[A-Z]{2,4}\d{4}[A-Z]*/g) ?? [])]
+  : [];
 ```
 
 ---
@@ -170,10 +357,10 @@ Server runs at `http://localhost:3001`
 ### Available Scripts
 
 ```bash
-npm run dev          # Start dev server with hot reload
-npm run build        # Compile TypeScript to JavaScript
-npm run sync:modules # Fetch and store all NUSMods data
-npx prisma studio    # Open visual database browser
+npm run dev           # Start dev server with hot reload
+npm run build         # Compile TypeScript to JavaScript
+npm run sync:modules  # Fetch and store all NUSMods data
+npx prisma studio     # Open visual database browser
 npx prisma migrate dev --name <name>  # Create a new migration
 ```
 
@@ -195,23 +382,6 @@ npm run dev
 
 Frontend runs at `http://localhost:5173`
 
-### Environment
-
-The API base URL is hardcoded to `http://localhost:3001` in `app/lib/api.ts`. Change this if your backend runs on a different port.
-
-### Frontend Stack
-
-| Tool | Purpose |
-|---|---|
-| React Router v7 | File-based routing and SSR |
-| shadcn/ui | Component library |
-| Tailwind CSS | Utility-first styling |
-| Axios | HTTP client with JWT interceptor |
-| Lucide React | Icons |
-| Recharts | Charts (dashboard) |
-| dnd-kit | Drag and drop (MS2) |
-| Zod | Form validation |
-
 ### Pages
 
 | Route | Auth Required | Description |
@@ -231,137 +401,104 @@ The API base URL is hardcoded to `http://localhost:3001` in `app/lib/api.ts`. Ch
 Base URL: `http://localhost:3001`
 
 > 🔒 Protected routes require the header: `Authorization: Bearer <token>`
-> Get your token from `POST /auth/login`
-
----
 
 ### Authentication
 
-#### Register
 ```
 POST /auth/register
 Body:     { "email": "user@u.nus.edu", "password": "password123" }
 Response: { "message": "User created successfully", "userId": "uuid" }
-Errors:   400 if email already in use | 400 if invalid input
-```
 
-#### Login
-```
 POST /auth/login
 Body:     { "email": "user@u.nus.edu", "password": "password123" }
 Response: { "message": "Login successful", "token": "eyJ..." }
-Errors:   401 if invalid credentials
 ```
-
----
 
 ### Profile
 
-#### Create / Update Profile
 ```
 POST /profile  🔒
 Body:     { "major": "Computer Science", "faculty": "School of Computing", "yearOfStudy": 1, "cohortYear": "AY2024/25" }
-Response: { "message": "Profile saved", "profile": { id, userId, major, faculty, yearOfStudy, cohortYear } }
-Note:     Uses upsert — safe to call multiple times to update
-```
 
-#### Get Profile
-```
 GET /profile  🔒
-Response: { "profile": { ...fields, "completedMods": [{ id, moduleCode }] } }
-Errors:   404 if profile not yet created
-```
+Response: { "profile": { ...fields, "completedMods": [...] } }
 
-#### Add Completed Modules
-```
 POST /profile/modules  🔒
-Body:     { "moduleCodes": ["CS1101S", "MA1521", "CS1231S"] }
-Response: { "message": "3 module(s) added", "count": 3 }
-Note:     Duplicates silently skipped. Module codes normalised to uppercase.
-```
+Body:     { "moduleCodes": ["CS1101S", "MA1521"] }
 
-#### Get Completed Modules
-```
 GET /profile/modules  🔒
-Response: { "modules": ["CS1101S", "MA1521", "CS1231S"] }
+Response: { "modules": ["CS1101S", "MA1521"] }
 ```
-
----
 
 ### Modules
 
-#### Search Modules
 ```
-GET /modules?search=QUERY
-Response: { "modules": [{ moduleCode, title, credits, description, prerequisite, semesters }] }
-Note:     Returns max 20 results. Searches both module code and title.
-          No search param returns first 20 modules alphabetically.
-```
+GET /modules?search=CS2040
+Response: { "modules": [{ moduleCode, title, credits, ... }] }
 
-#### Get Module by Code
-```
 GET /modules/:code
-Response: { "module": { moduleCode, title, credits, description, prerequisite, semesters } }
-Errors:   404 if module not found
-Example:  GET /modules/CS2040S
-```
+Response: { "module": { moduleCode, title, credits, prerequisite, semesters } }
 
-#### Get Prerequisites
-```
 GET /modules/:code/prerequisites
-Response: {
-  "moduleCode": "CS2040S",
-  "prerequisites": ["CS1101S", "CS1231S", "MA1100"],  // parsed array
-  "prerequisiteText": "raw NUSMods text..."            // original string
-}
-Note:     prerequisites array extracted via regex from NUSMods raw text.
-          Full AND/OR logic parsing planned for MS2.
+Response: { "moduleCode": "CS2040S", "prerequisites": ["CS1101S", ...], "prerequisiteText": "..." }
 ```
-
----
 
 ### Recommendations
 
-#### Get AI Module Recommendations
 ```
 POST /recommendations  🔒
-Response: {
-  "recommendations": [
-    {
-      "moduleCode": "CS2030S",
-      "title": "Programming Methodology II",
-      "reason": "Prerequisite satisfied. Core requirement for CS major."
-    }
-  ]
-}
-Note:     Returns exactly 3 recommendations.
-          AI filters modules matching the student's completed module prefixes.
-          Requires a completed profile with at least some modules added.
-Errors:   404 if no profile found | 502 if AI response malformed
+Body:     { "goals": "I want to focus on AI/ML" }  // optional
+Response: { "recommendations": [{ moduleCode, title, reason }] }
+Note:     Returns exactly 3 recommendations. Goals are injected into AI prompt.
 ```
 
 ---
 
 ## Software Engineering Practices
 
-### Branching Strategy
-- `main` — stable, protected branch. Only merged via PRs.
+### Git Workflow
+
+![GitHub Branches](docs/diagrams/github-branches.png)
+
+- `main` — stable, protected branch. Direct pushes blocked via branch protection rules.
 - Feature branches — `feat/`, `fix/`, `docs/` prefixes
-- PRs reviewed via GitHub Copilot code review
+- Every change goes through a Pull Request
+- GitHub Copilot code review on all PRs
 
-### Commit Convention
-Follows [Conventional Commits](https://www.conventionalcommits.org/):
-- `feat:` — new feature
-- `fix:` — bug fix
-- `docs:` — documentation
-- `chore:` — setup, config
+### Copilot Code Review
 
-### Code Quality
-- TypeScript strict mode on both frontend and backend
-- ESLint enforced
-- Copilot PR reviews on every merge — high priority issues addressed before merging
-- Input validation on all API endpoints
-- JWT startup check — server fails fast if `JWT_SECRET` or `ANTHROPIC_API_KEY` missing
+![Copilot Review](docs/screenshots/copilot-review.png)
+
+Every PR is reviewed by GitHub Copilot. Issues triaged by severity:
+- **High** — fixed before merge (JWT_SECRET startup check, input validation, error handling)
+- **Medium** — tracked as GitHub Issues for MS2
+
+### CI/CD
+
+![CI Passing](docs/diagrams/github-actions-ci.png)
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm run build
+```
 
 ### Security
 - Passwords hashed with bcrypt (10 salt rounds)
@@ -369,6 +506,42 @@ Follows [Conventional Commits](https://www.conventionalcommits.org/):
 - Emails normalised (lowercase + trimmed) before storage
 - `.env` files gitignored — never committed
 - Branch protection enabled on `main`
+- Input type validation on all API endpoints
+
+---
+
+## Testing
+
+### Manual Testing (MS1)
+
+All API endpoints tested via Thunder Client during development:
+
+| Endpoint | Cases Tested |
+|---|---|
+| `POST /auth/register` | Valid input, duplicate email, missing fields, whitespace-only input |
+| `POST /auth/login` | Valid login, wrong password, non-existent email |
+| `POST /profile` | Valid profile, missing fields, string yearOfStudy |
+| `POST /profile/modules` | Valid array, empty array, duplicate modules |
+| `GET /modules?search=` | Module code search, title search, no results |
+| `GET /modules/:code/prerequisites` | Module with prereqs, without prereqs, invalid code |
+| `POST /recommendations` | With goals, without goals, missing profile |
+
+### Automated Testing (MS2 Plan)
+- Jest — unit tests for validation logic and utility functions
+- Supertest — integration tests for API endpoints against test database
+- React Testing Library — component and user flow tests
+
+---
+
+## User Testing Plan
+
+> 📌 **[PLACEHOLDER — User testing results to be added after MS2 testing]**
+
+We will recruit 5+ NUS students (Year 1-2, School of Computing) before MS2. Test tasks:
+1. Register and complete onboarding from scratch
+2. Assess whether AI recommendations seem relevant
+3. Use prerequisite checker to plan a module path to CS3230
+4. Rate whether goals entered in Step 3 visibly affected recommendations
 
 ---
 
@@ -379,22 +552,23 @@ Follows [Conventional Commits](https://www.conventionalcommits.org/):
 - [x] Profile setup — major, faculty, year, cohort, completed modules
 - [x] NUSMods API integrated — 7139 modules synced to PostgreSQL
 - [x] AI recommendation endpoint — personalised using Anthropic Claude
+- [x] Goal-aware recommendations — focus areas injected into AI prompt
 - [x] Prerequisite display — module codes extracted from NUSMods raw text
 - [x] Frontend onboarding — 3-step flow connected to backend
-- [x] Frontend recommendations page — displays AI results
+- [x] Frontend recommendations page — displays AI results with reasons
 - [x] Frontend prerequisite checker — interactive chain exploration
 - [x] Auth flow — login, signup, logout, protected routes
-- [x] README with setup guide and API documentation
+- [x] README with setup guide, API docs, and SE practices
 
 ### MS2 — Prototype (29 June 2026)
 - [ ] 4-year plan builder with drag and drop semester slots
 - [ ] Interactive prerequisite chain graph visualisation
 - [ ] Workload estimator per semester
-- [ ] AI recommendations with richer explanations
 - [ ] Graduation requirements tracker
 - [ ] Plan saving and retrieval for returning users
 - [ ] User testing with at least 5 NUS students
 - [ ] Automated test suite (Jest + Supertest + React Testing Library)
+- [ ] GitHub Actions CI pipeline
 
 ### MS3 — Extended System (27 July 2026)
 - [ ] Plan variants — create and compare up to 3 plans side by side
@@ -403,8 +577,7 @@ Follows [Conventional Commits](https://www.conventionalcommits.org/):
 - [ ] AI what-if simulator
 - [ ] Comprehensive test coverage
 - [ ] Full user testing with structured findings
-- [ ] GitHub Actions CI pipeline
-- [ ] Splashdown poster and demo
+- [ ] Splashdown poster and demo video
 
 ---
 
@@ -415,8 +588,9 @@ Follows [Conventional Commits](https://www.conventionalcommits.org/):
 | Prerequisite AND/OR logic not parsed | MS2 | Build proper prerequisite tree parser |
 | `@prisma/client` and `pg` in frontend `package.json` | Low | Remove — these are backend packages |
 | Dashboard uses mock `data.json` | MS2 | Connect to real backend data |
-| Module recommendation pool limited to 50 modules | MS2 | Smarter eligibility-based filtering |
-| Sequential NUSMods sync (slow) | MS2 | Add concurrency with worker pool |
+| Module recommendation pool capped at 50 | MS2 | Smarter eligibility-based filtering |
+| Sequential NUSMods sync (~5 mins) | MS2 | Add concurrency with worker pool |
+| No automated tests | MS2 | Jest + Supertest + RTL |
 
 ---
 

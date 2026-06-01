@@ -7,6 +7,7 @@
  *   - Stores email in localStorage for the profile greeting
  *   - Uses react-router navigate() instead of window.location.href
  *   - Courseway brand colours (navy/teal) applied via inline style + CSS vars
+ *   - Fixed navigate("./..") → navigate("/")
  */
 
 import { useState } from "react"
@@ -39,7 +40,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       // auth.login() writes to localStorage AND updates AuthContext state
       login(data.token, email)
 
-      navigate("/..")
+      navigate("/")
     } catch (err: any) {
       const msg = err.response?.data?.error
                || err.response?.data?.message

@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/com
 import { Button } from "~/components/ui/button"
 import { Loader2, Sparkles, AlertCircle } from "lucide-react"
 import { TooltipProvider } from "~/components/ui/tooltip"
+import api from "~/lib/api"
 
 // Define the shape of the data we expect from your backend
 type Recommendation = {
@@ -29,25 +30,17 @@ export default function RecommendationsPage() {
       return
     }
 
-    // 2. Fetch the AI recommendations
+    // 2. Fetch the AI recommendations, passing goals from onboarding if present
     const fetchRecommendations = async () => {
       try {
-        const response = await fetch("http://localhost:3001/recommendations", {
-          method: "POST", // Your backend docs specified POST for this route
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          }
-        })
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch recommendations. Make sure you completed the onboarding goals!")
-        }
-
-        const data = await response.json()
+        const goals = localStorage.getItem("courseGoals") || ""
+        const { data } = await api.post("/recommendations", { goals })
         setRecommendations(data.recommendations || [])
       } catch (err: any) {
-        setError(err.message)
+        setError(
+          err.response?.data?.error ||
+          "Failed to fetch recommendations. Make sure you completed onboarding first."
+        )
       } finally {
         setIsLoading(false)
       }
@@ -64,7 +57,6 @@ export default function RecommendationsPage() {
         "--header-height": "calc(var(--spacing) * 12)",
       } as React.CSSProperties}
     >
-      {/* We know they are logged in if they made it here */}
       <AppSidebar variant="inset" isLoggedIn={true} />
       
       <SidebarInset>
@@ -83,7 +75,6 @@ export default function RecommendationsPage() {
             </div>
           </div>
 
-          {/* Loading State */}
           {isLoading && (
             <div className="flex flex-col items-center justify-center flex-1 min-h-[40vh] text-muted-foreground">
               <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary" />
@@ -91,7 +82,6 @@ export default function RecommendationsPage() {
             </div>
           )}
 
-          {/* Error State */}
           {error && !isLoading && (
             <div className="flex flex-col items-center justify-center flex-1 min-h-[40vh] text-center max-w-md mx-auto">
               <AlertCircle className="h-12 w-12 text-destructive mb-4" />
@@ -101,7 +91,6 @@ export default function RecommendationsPage() {
             </div>
           )}
 
-          {/* Success State: Render the Cards */}
           {!isLoading && !error && recommendations.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recommendations.map((mod) => (
@@ -128,7 +117,6 @@ export default function RecommendationsPage() {
             </div>
           )}
 
-          {/* Empty State (if AI returns an empty array) */}
           {!isLoading && !error && recommendations.length === 0 && (
             <div className="text-center py-20 text-muted-foreground">
               <p>No recommendations found at this time. Try updating your profile goals!</p>

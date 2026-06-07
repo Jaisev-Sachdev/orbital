@@ -193,10 +193,10 @@ router.post('/:id/slots/bulk', requireAuth, async (req: AuthRequest, res: Respon
     return;
   }
 
-  const parsedYear = parseInt(year);
-  const parsedSemester = parseInt(semester);
+  const parsedYear = typeof year === 'string' ? Number(year) : year;
+  const parsedSemester = typeof semester === 'string' ? Number(semester) : semester;
 
-  if (isNaN(parsedYear) || isNaN(parsedSemester)) {
+  if (!Number.isInteger(parsedYear) || !Number.isInteger(parsedSemester)) {
     res.status(400).json({ error: 'year and semester must be numbers' });
     return;
   }

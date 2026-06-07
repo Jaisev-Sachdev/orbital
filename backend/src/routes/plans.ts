@@ -8,10 +8,14 @@ const router = Router();
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const { name } = req.body;
 
+  const normalizedName = typeof name === 'string' && name.trim().length > 0
+    ? name.trim()
+    : 'My Plan';
+
   const plan = await prisma.plan.create({
     data: {
       userId: req.userId!,
-      name: name || 'My Plan'
+      name: normalizedName
     }
   });
 

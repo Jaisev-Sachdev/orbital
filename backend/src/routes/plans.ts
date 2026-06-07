@@ -206,12 +206,22 @@ router.post('/:id/slots/bulk', requireAuth, async (req: AuthRequest, res: Respon
     return;
   }
 
+  const normalizedCodes = moduleCodes
+    .filter((code: unknown): code is string => typeof code === 'string')
+    .map(code => code.toUpperCase().trim())
+    .filter(code => code.length > 0);
+
+  if (normalizedCodes.length !== moduleCodes.length) {
+    res.status(400).json({ error: 'moduleCodes must be an array of non-empty strings' });
+    return;
+  }
+
   const added = await prisma.semesterSlot.createMany({
-    data: moduleCodes.map((code: string) => ({
+    data: normalizedCodes.map(code => ({
       planId: String(req.params.id),
       year: parsedYear,
       semester: parsedSemester,
-      moduleCode: String(code).toUpperCase().trim()
+      moduleCode: code
     })),
     skipDuplicates: true
   });

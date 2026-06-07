@@ -119,12 +119,21 @@ router.post('/:id/slots', requireAuth, async (req: AuthRequest, res: Response) =
   }
 
   try {
+    const normalizedModuleCode = typeof moduleCode === 'string'
+      ? moduleCode.toUpperCase().trim()
+      : '';
+
+    if (!normalizedModuleCode) {
+      res.status(400).json({ error: 'moduleCode must be a non-empty string' });
+      return;
+    }
+
     const slot = await prisma.semesterSlot.create({
       data: {
         planId: String(req.params.id),
         year: parsedYear,
         semester: parsedSemester,
-        moduleCode: String(moduleCode).toUpperCase().trim()
+        moduleCode: normalizedModuleCode
       }
     });
 

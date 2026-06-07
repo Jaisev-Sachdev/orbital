@@ -138,9 +138,9 @@ router.delete('/:id/slots/:slotId', requireAuth, async (req: AuthRequest, res: R
   const slot = await prisma.semesterSlot.findFirst({
     where: {
       id: String(req.params.slotId),
-      planId: String(req.params.id)
+      planId: String(req.params.id),
+      plan: { userId: req.userId! }
     }
-  });
 
   if (!slot) {
     res.status(404).json({ error: 'Slot not found' });

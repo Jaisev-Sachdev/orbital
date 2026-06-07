@@ -81,9 +81,10 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   }
 
   // Delete all slots first, then the plan
-  await prisma.semesterSlot.deleteMany({ where: { planId: String(req.params.id) } });
-  await prisma.plan.delete({ where: { id: String(req.params.id) } });
-
+  await prisma.$transaction([
+    prisma.semesterSlot.deleteMany({ where: { planId: String(req.params.id) } }),
+    prisma.plan.delete({ where: { id: String(req.params.id) } })
+  ]);
   res.json({ message: 'Plan deleted' });
 });
 

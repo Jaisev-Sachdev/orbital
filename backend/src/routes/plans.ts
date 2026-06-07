@@ -155,6 +155,7 @@ router.delete('/:id/slots/:slotId', requireAuth, async (req: AuthRequest, res: R
       planId: String(req.params.id),
       plan: { userId: req.userId! }
     }
+  });
 
   if (!slot) {
     res.status(404).json({ error: 'Slot not found' });

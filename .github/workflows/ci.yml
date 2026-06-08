@@ -1,7 +1,7 @@
 name: CI
 on:
   push:
-    branches: [main, fix/frontend-api-client]  # 👈 Added branch here
+    branches: [main]
   pull_request:
     branches: [main]
 jobs:

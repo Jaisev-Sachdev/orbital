@@ -12,8 +12,15 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // POST /recommendations
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
-  // Read goals from request body (sent by frontend from localStorage)
-  const { goals } = req.body;
+  // Read optional goals from request body (sent by frontend from localStorage)
+  const { goals: rawGoals } = req.body ?? {};
+
+  if (rawGoals !== undefined && typeof rawGoals !== 'string') {
+    res.status(400).json({ error: 'goals must be a string when provided' });
+    return;
+  }
+
+  const goals = rawGoals?.trim();
 
   // 1. Fetch user's profile and completed modules
   const profile = await prisma.profile.findUnique({

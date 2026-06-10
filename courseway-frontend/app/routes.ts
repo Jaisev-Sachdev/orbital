@@ -8,5 +8,6 @@ export default [
   route("signup",         "routes/signup.tsx"),
   route("recommendations","routes/recommendations.tsx"),
   route("prerequisites",  "routes/prerequisites.tsx"),  
+  route("prerequisites2",  "routes/prerequisites2.tsx"),  
   route("module-planning", "routes/module-planning.tsx"), // ← MS1: prereq checker
 ] satisfies RouteConfig;

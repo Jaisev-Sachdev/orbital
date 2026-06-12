@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react"
 import { SemesterCard } from "~/components/semester_card"
+import { AppSidebar } from "~/components/app-sidebar"
+import { SiteHeader } from "~/components/site-header"
+import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar"
+import {TooltipProvider} from "~/components/ui/tooltip"
 import api from "~/lib/api"
 
 interface Module {
@@ -136,23 +140,68 @@ export default function PlanBuilder() {
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, padding: 24 }}>
-      {([1, 2, 3, 4] as const).map(year =>
-        ([1, 2] as const).map(semester => {
-          const key = `${year}-${semester}`
-          return (
-            <SemesterCard
-              key={key}
-              year={year}
-              semester={semester}
-              modules={plan[key]}
-              allModules={allPlacedCodes}
-              onAdd={module => handleAdd(key, module)}
-              onRemove={moduleCode => handleRemove(key, moduleCode)}
-            />
-          )
-        })
-      )}
-    </div>
+    <TooltipProvider>
+      <SidebarProvider
+        style={{
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties}
+      >
+        <AppSidebar variant="inset" isLoggedIn={true} />
+        
+        <SidebarInset className="flex flex-col h-screen overflow-hidden">
+          <SiteHeader />
+          
+          <div className="px-8 pt-6 pb-2">
+            <h1 className="text-3xl font-bold tracking-tight">Module Planner</h1>
+            <p className="text-muted-foreground mt-1">
+              Map out your academic journey across all 4 years.
+            </p>
+          </div>
+
+          {/* ── Scrollable Canvas Area ── */}
+          <div className="flex-1 overflow-auto p-8 pt-4 custom-scrollbar">
+            <div style={{ 
+              display: "flex", 
+              gap: "32px", 
+              minWidth: "max-content", // Forces the container to stretch and trigger horizontal scroll 
+              paddingBottom: "24px" 
+            }}>
+              {([1, 2, 3, 4] as const).map(year => (
+                <div 
+                  key={year} 
+                  style={{ 
+                    display: "flex", 
+                    flexDirection: "column", 
+                    gap: "24px", 
+                    width: "400px" // Enlarged cards to prevent empty space
+                  }}
+                >
+                  {/* Optional Year Header to organize visually */}
+                  <h3 className="text-lg font-semibold text-foreground/80 border-b pb-2">
+                    Year {year}
+                  </h3>
+                  
+                  {([1, 2] as const).map(semester => {
+                    const key = `${year}-${semester}`
+                    return (
+                      <SemesterCard
+                        key={key}
+                        year={year}
+                        semester={semester}
+                        modules={plan[key]}
+                        allModules={allPlacedCodes}
+                        onAdd={module => handleAdd(key, module)}
+                        onRemove={moduleCode => handleRemove(key, moduleCode)}
+                      />
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   )
 }

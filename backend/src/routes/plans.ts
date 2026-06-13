@@ -167,7 +167,7 @@ router.delete('/:id/slots/:slotId', requireAuth, async (req: AuthRequest, res: R
   res.json({ message: 'Module removed from plan' });
 });
 
-// GET /plans/:id/slots — get all slots grouped by year and semester
+// GET /plans/:id/slots — get all slots grouped by year and semester, enriched with module info
 router.get('/:id/slots', requireAuth, async (req: AuthRequest, res: Response) => {
   const plan = await prisma.plan.findFirst({
     where: { id: String(req.params.id), userId: req.userId! }
@@ -183,15 +183,29 @@ router.get('/:id/slots', requireAuth, async (req: AuthRequest, res: Response) =>
     orderBy: [{ year: 'asc' }, { semester: 'asc' }]
   });
 
+  // Fetch module details (title, credits) for all moduleCodes in this plan
+  const moduleCodes = [...new Set(slots.map(s => s.moduleCode))];
+  const modules = await prisma.module.findMany({
+    where: { moduleCode: { in: moduleCodes } }
+  });
+  const moduleMap = new Map(modules.map(m => [m.moduleCode, m]));
+
+  // Enrich each slot with title and credits
+  const enrichedSlots = slots.map(slot => ({
+    ...slot,
+    title: moduleMap.get(slot.moduleCode)?.title ?? null,
+    credits: moduleMap.get(slot.moduleCode)?.credits ?? null
+  }));
+
   // Group slots by year and semester for easy frontend consumption
-  const grouped: Record<string, typeof slots> = {};
-  for (const slot of slots) {
+  const grouped: Record<string, typeof enrichedSlots> = {};
+  for (const slot of enrichedSlots) {
     const key = `year${slot.year}_sem${slot.semester}`;
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(slot);
   }
 
-  res.json({ slots, grouped });
+  res.json({ slots: enrichedSlots, grouped });
 });
 
 // POST /plans/:id/slots/bulk — add multiple modules to a semester at once

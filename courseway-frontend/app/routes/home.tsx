@@ -50,7 +50,6 @@ export default function Home() {
           </>
         )}
         <Link to="/onboarding">Start Onboarding</Link> | {" "}
-        <Link to="/dashboard">Dashboard</Link> | {" "}
         <Link to="/recommendations">Recommendations</Link>
       </nav>
 

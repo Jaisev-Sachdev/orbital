@@ -117,7 +117,6 @@ export function AppSidebar({
   ...props 
 }: React.ComponentProps<typeof Sidebar> & { isLoggedIn?: boolean }) {
   
-  // Set up local state for the fetched profile details
   const [profile, setProfile] = React.useState<{ name: string; email: string; avatar: string } | null>(null)
 
   // Fetch the profile dynamically when the user is logged in
@@ -126,7 +125,6 @@ export function AppSidebar({
       api.get("/profile")
         .then((res) => {
           const profileData = res.data.profile
-          // Map database items cleanly into the UI fields
           setProfile({
             name: `${profileData.major} (Y${profileData.yearOfStudy})`,
             email: profileData.faculty || "School of Computing",

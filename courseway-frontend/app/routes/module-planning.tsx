@@ -3,7 +3,7 @@ import { SemesterCard } from "~/components/semester_card"
 import { AppSidebar } from "~/components/app-sidebar"
 import { SiteHeader } from "~/components/site-header"
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar"
-import {TooltipProvider} from "~/components/ui/tooltip"
+import { TooltipProvider } from "~/components/ui/tooltip"
 import api from "~/lib/api"
 
 interface Module {
@@ -15,73 +15,127 @@ interface Module {
 
 type PlanMap = Record<string, Module[]>
 
-export default function PlanBuilder() {
-  const [plan, setPlan] = useState<PlanMap>({
-    "1-1": [], "1-2": [],
-    "2-1": [], "2-2": [],
-    "3-1": [], "3-2": [],
-    "4-1": [], "4-2": [],
-  })
+const EMPTY_PLAN: PlanMap = {
+  "1-1": [], "1-2": [],
+  "2-1": [], "2-2": [],
+  "3-1": [], "3-2": [],
+  "4-1": [], "4-2": [],
+}
 
-  // State to hold the dynamic Plan ID
+export default function PlanBuilder() {
+  const [plan, setPlan] = useState<PlanMap>(EMPTY_PLAN)
+  
+  // New state to hold all available plans
+  const [plans, setPlans] = useState<{id: string, name: string}[]>([])
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null)
 
+  // 1. Reusable function to fetch slots for a given plan ID
+  const loadPlanSlots = async (planId: string) => {
+    try {
+      const { data: slotsData } = await api.get(`/plans/${planId}/slots`)
+      
+      const newPlan: PlanMap = { ...EMPTY_PLAN }
+
+      if (slotsData.grouped) {
+        Object.entries(slotsData.grouped).forEach(([key, slots]: [string, any]) => {
+          const match = key.match(/year(\d)_sem(\d)/)
+          if (match) {
+            const frontendKey = `${match[1]}-${match[2]}`
+            newPlan[frontendKey] = slots
+          }
+        })
+      }
+      setPlan(newPlan)
+    } catch (error) {
+      console.error("Failed to load plan slots:", error)
+    }
+  }
+
+  // 2. Initial load of all plans
   useEffect(() => {
-    const initializePlan = async () => {
+    const initializePlans = async () => {
       try {
-        // 1. GET /plans: Fetch the user's plans
         const { data: plansData } = await api.get('/plans')
         let planId = ''
+        let loadedPlans = plansData.plans || []
 
-        if (plansData.plans && plansData.plans.length > 0) {
-          planId = plansData.plans[0].id
+        if (loadedPlans.length > 0) {
+          planId = loadedPlans[0].id
         } else {
-          // 2. POST /plans: If no plans exist, create a default one
+          // Create default plan if none exist
           const { data: newPlanData } = await api.post('/plans', { name: 'Main Plan' })
           planId = newPlanData.plan.id
+          loadedPlans = [newPlanData.plan]
         }
 
+        setPlans(loadedPlans)
         setCurrentPlanId(planId)
-
-        // 3. GET /plans/:id/slots: Fetch the slots for this specific plan
-        const { data: slotsData } = await api.get(`/plans/${planId}/slots`)
-        
-        // Prepare an empty plan map
-        const newPlan: PlanMap = { 
-          "1-1": [], "1-2": [], "2-1": [], "2-2": [], 
-          "3-1": [], "3-2": [], "4-1": [], "4-2": [] 
-        }
-
-        // Map the backend's "year1_sem1" format to the frontend's "1-1" format
-        if (slotsData.grouped) {
-          Object.entries(slotsData.grouped).forEach(([key, slots]: [string, any]) => {
-            const match = key.match(/year(\d)_sem(\d)/)
-            if (match) {
-              const frontendKey = `${match[1]}-${match[2]}`
-              newPlan[frontendKey] = slots
-            }
-          })
-        }
-        
-        setPlan(newPlan)
+        loadPlanSlots(planId)
       } catch (error) {
         console.error("Failed to load or create plan:", error)
       }
     }
 
-    initializePlan()
+    initializePlans()
   }, [])
+
+  // 3. Dropdown handler to switch plans
+  const handleSwitchPlan = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPlanId = e.target.value
+    setCurrentPlanId(newPlanId)
+    // Instantly reset UI while fetching to prevent seeing old data
+    setPlan(EMPTY_PLAN) 
+    loadPlanSlots(newPlanId)
+  }
+
+  // 4. Handler to create a new plan
+  const handleCreatePlan = async () => {
+    const name = prompt("Enter a name for your new plan (e.g., 'Exchange Sem Plan'):")
+    if (!name?.trim()) return
+
+    try {
+      const { data } = await api.post('/plans', { name: name.trim() })
+      setPlans(prev => [...prev, data.plan])
+      setCurrentPlanId(data.plan.id)
+      setPlan(EMPTY_PLAN)
+      // New plans have no slots, but we can call it to be safe or just leave it empty
+      loadPlanSlots(data.plan.id)
+    } catch (error) {
+      console.error("Failed to create new plan:", error)
+      alert("Failed to create plan. Please try again.")
+    }
+  }
+
+  // 5. Delete plan handler (optional extra utility)
+  const handleDeletePlan = async () => {
+    if (!currentPlanId || plans.length <= 1) {
+      return alert("You cannot delete your only plan!")
+    }
+    
+    if (!confirm("Are you sure you want to delete this plan? This cannot be undone.")) return
+
+    try {
+      await api.delete(`/plans/${currentPlanId}`)
+      const remainingPlans = plans.filter(p => p.id !== currentPlanId)
+      setPlans(remainingPlans)
+      
+      const fallbackId = remainingPlans[0].id
+      setCurrentPlanId(fallbackId)
+      loadPlanSlots(fallbackId)
+    } catch (error) {
+      console.error("Failed to delete plan:", error)
+    }
+  }
 
   const allPlacedCodes = Object.values(plan).flat().map(m => m.moduleCode)
 
   const handleAdd = async (semKey: string, module: Module) => {
-    if (!currentPlanId) return // Guard clause
+    if (!currentPlanId) return 
 
     const [yearStr, semStr] = semKey.split("-")
     const year = parseInt(yearStr, 10)
     const semester = parseInt(semStr, 10)
 
-    // Optimistic UI Update: Give it a temporary ID so the UI updates instantly
     const tempId = `temp-${Date.now()}`
     const moduleWithTempId = { ...module, id: tempId }
 
@@ -91,14 +145,12 @@ export default function PlanBuilder() {
     }))
 
     try {
-      // 4. POST /plans/:id/slots: Add the module to the database
       const { data } = await api.post(`/plans/${currentPlanId}/slots`, {
         year,
         semester,
         moduleCode: module.moduleCode,
       })
 
-      // Replace the temporary UI ID with the real slot.id from the database
       setPlan(prev => ({
         ...prev,
         [semKey]: prev[semKey].map(m =>
@@ -106,7 +158,6 @@ export default function PlanBuilder() {
         ),
       }))
     } catch {
-      // Roll back the UI if the API request fails
       setPlan(prev => ({
         ...prev,
         [semKey]: prev[semKey].filter(m => m.moduleCode !== module.moduleCode),
@@ -115,26 +166,23 @@ export default function PlanBuilder() {
   }
 
   const handleRemove = async (semKey: string, moduleCode: string) => {
-    if (!currentPlanId) return // Guard clause
+    if (!currentPlanId) return 
 
     const previous = plan[semKey]
     const moduleToRemove = previous.find(m => m.moduleCode === moduleCode)
 
     if (!moduleToRemove?.id) return
 
-    // Optimistic UI Update: Remove it from the screen instantly
     setPlan(prev => ({
       ...prev,
       [semKey]: prev[semKey].filter(m => m.moduleCode !== moduleCode),
     }))
 
     try {
-      // 5. DELETE /plans/:id/slots/:slotId: Remove it from the database
       if (!moduleToRemove.id.startsWith('temp-')) {
         await api.delete(`/plans/${currentPlanId}/slots/${moduleToRemove.id}`)
       }
     } catch {
-      // Roll back the UI if the API request fails
       setPlan(prev => ({ ...prev, [semKey]: previous }))
     }
   }
@@ -153,8 +201,44 @@ export default function PlanBuilder() {
           <SiteHeader />
           
           <div className="px-8 pt-6 pb-2">
-            <h1 className="text-3xl font-bold tracking-tight">Module Planner</h1>
-            <p className="text-muted-foreground mt-1">
+            <div className="flex items-center gap-4">
+              <h1 className="text-3xl font-bold tracking-tight">Module Planner</h1>
+              
+              {/* ── Plan Selection Dropdown & Controls ── */}
+              {plans.length > 0 && (
+                <div className="flex items-center gap-2 mt-1">
+                  <select
+                    value={currentPlanId || ""}
+                    onChange={handleSwitchPlan}
+                    className="bg-[var(--cw-navy-light)] border border-[var(--cw-navy-border)] text-sm rounded-md px-3 py-1.5 text-white focus:outline-none focus:ring-1 focus:ring-[var(--cw-teal)] cursor-pointer"
+                  >
+                    {plans.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  <button
+                    onClick={handleCreatePlan}
+                    className="text-xs bg-[var(--cw-teal-glow)] text-[var(--cw-teal)] border border-[rgba(0,201,167,0.3)] px-3 py-1.5 rounded-md hover:bg-[rgba(0,201,167,0.25)] transition-colors font-medium whitespace-nowrap"
+                  >
+                    + New Plan
+                  </button>
+                  
+                  {plans.length > 1 && (
+                    <button
+                      onClick={handleDeletePlan}
+                      className="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1.5 rounded-md hover:bg-red-500/20 transition-colors font-medium whitespace-nowrap"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <p className="text-muted-foreground mt-2">
               Map out your academic journey across all 4 years.
             </p>
           </div>
@@ -164,7 +248,7 @@ export default function PlanBuilder() {
             <div style={{ 
               display: "flex", 
               gap: "32px", 
-              minWidth: "max-content", // Forces the container to stretch and trigger horizontal scroll 
+              minWidth: "max-content", 
               paddingBottom: "24px" 
             }}>
               {([1, 2, 3, 4] as const).map(year => (
@@ -174,10 +258,9 @@ export default function PlanBuilder() {
                     display: "flex", 
                     flexDirection: "column", 
                     gap: "24px", 
-                    width: "400px" // Enlarged cards to prevent empty space
+                    width: "400px" 
                   }}
                 >
-                  {/* Optional Year Header to organize visually */}
                   <h3 className="text-lg font-semibold text-foreground/80 border-b pb-2">
                     Year {year}
                   </h3>

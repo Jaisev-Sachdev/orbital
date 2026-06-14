@@ -84,11 +84,8 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  // Delete all slots first, then the plan
-  await prisma.$transaction([
-    prisma.semesterSlot.deleteMany({ where: { planId: String(req.params.id) } }),
-    prisma.plan.delete({ where: { id: String(req.params.id) } })
-  ]);
+  // Cascade delete is handled by the schema (onDelete: Cascade on SemesterSlot)
+  await prisma.plan.delete({ where: { id: String(req.params.id) } });
   res.json({ message: 'Plan deleted' });
 });
 
@@ -125,6 +122,16 @@ router.post('/:id/slots', requireAuth, async (req: AuthRequest, res: Response) =
 
     if (!normalizedModuleCode) {
       res.status(400).json({ error: 'moduleCode must be a non-empty string' });
+      return;
+    }
+
+    // Validate the module exists in the database
+    const moduleExists = await prisma.module.findUnique({
+      where: { moduleCode: normalizedModuleCode }
+    });
+
+    if (!moduleExists) {
+      res.status(404).json({ error: `Module ${normalizedModuleCode} not found` });
       return;
     }
 
@@ -167,7 +174,7 @@ router.delete('/:id/slots/:slotId', requireAuth, async (req: AuthRequest, res: R
   res.json({ message: 'Module removed from plan' });
 });
 
-// GET /plans/:id/slots — get all slots grouped by year and semester
+// GET /plans/:id/slots — get all slots grouped by year and semester, enriched with module info
 router.get('/:id/slots', requireAuth, async (req: AuthRequest, res: Response) => {
   const plan = await prisma.plan.findFirst({
     where: { id: String(req.params.id), userId: req.userId! }
@@ -183,15 +190,29 @@ router.get('/:id/slots', requireAuth, async (req: AuthRequest, res: Response) =>
     orderBy: [{ year: 'asc' }, { semester: 'asc' }]
   });
 
+  // Fetch module details (title, credits) for all moduleCodes in this plan
+  const moduleCodes = [...new Set(slots.map(s => s.moduleCode))];
+  const modules = await prisma.module.findMany({
+    where: { moduleCode: { in: moduleCodes } }
+  });
+  const moduleMap = new Map(modules.map(m => [m.moduleCode, m]));
+
+  // Enrich each slot with title and credits
+  const enrichedSlots = slots.map(slot => ({
+    ...slot,
+    title: moduleMap.get(slot.moduleCode)?.title ?? null,
+    credits: moduleMap.get(slot.moduleCode)?.credits ?? null
+  }));
+
   // Group slots by year and semester for easy frontend consumption
-  const grouped: Record<string, typeof slots> = {};
-  for (const slot of slots) {
+  const grouped: Record<string, typeof enrichedSlots> = {};
+  for (const slot of enrichedSlots) {
     const key = `year${slot.year}_sem${slot.semester}`;
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(slot);
   }
 
-  res.json({ slots, grouped });
+  res.json({ slots: enrichedSlots, grouped });
 });
 
 // POST /plans/:id/slots/bulk — add multiple modules to a semester at once
@@ -241,6 +262,97 @@ router.post('/:id/slots/bulk', requireAuth, async (req: AuthRequest, res: Respon
   });
 
   res.status(201).json({ message: `${added.count} module(s) added`, count: added.count });
+});
+
+// GET /plans/:id/workload: per-semester workload breakdown
+router.get('/:id/workload', requireAuth, async (req: AuthRequest, res: Response) => {
+  const plan = await prisma.plan.findFirst({
+    where: { id: String(req.params.id), userId: req.userId! }
+  });
+
+  if (!plan) {
+    res.status(404).json({ error: 'Plan not found' });
+    return;
+  }
+
+  const slots = await prisma.semesterSlot.findMany({
+    where: { planId: String(req.params.id) },
+    orderBy: [{ year: 'asc' }, { semester: 'asc' }]
+  });
+
+  const moduleCodes = [...new Set(slots.map(s => s.moduleCode))];
+  const modules = await prisma.module.findMany({
+    where: { moduleCode: { in: moduleCodes } }
+  });
+  const moduleMap = new Map(modules.map(m => [m.moduleCode, m]));
+
+  // Group slots by semester
+  const grouped: Record<string, typeof slots> = {};
+  for (const slot of slots) {
+    const key = `year${slot.year}_sem${slot.semester}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(slot);
+  }
+
+  const OVERLOAD_MC_THRESHOLD = 23;
+  const OVERLOAD_HOURS_THRESHOLD = 50;
+  const PROJECT_HEAVY_HOURS = 6; // lab + project hours/week to count a module as "project-heavy"
+  const PROJECT_HEAVY_COUNT = 2; // number of project-heavy modules to trigger the flag
+
+  const workload: Record<string, any> = {};
+
+  for (const [key, semSlots] of Object.entries(grouped)) {
+    let totalMCs = 0;
+    const breakdown = { lecture: 0, tutorial: 0, lab: 0, project: 0, prep: 0 };
+    let projectHeavyCount = 0;
+    let incompleteData = false;
+
+    for (const slot of semSlots) {
+      const mod = moduleMap.get(slot.moduleCode);
+      // Always count MCs regardless of workload data availability
+      totalMCs += mod?.credits ?? 0;
+
+      const w = mod?.workload ?? [];
+      if (w.length < 5) {
+        // Skip only the hour breakdown for modules with incomplete workload data
+        incompleteData = true;
+        continue;
+      }
+
+      const [lecture, tutorial, lab, project, prep] = w;
+      breakdown.lecture += lecture;
+      breakdown.tutorial += tutorial;
+      breakdown.lab += lab;
+      breakdown.project += project;
+      breakdown.prep += prep;
+
+      if (lab + project >= PROJECT_HEAVY_HOURS) {
+        projectHeavyCount++;
+      }
+    }
+
+    const totalHours = Object.values(breakdown).reduce((sum, h) => sum + h, 0);
+
+    const flags: string[] = [];
+    if (totalMCs > OVERLOAD_MC_THRESHOLD || totalHours > OVERLOAD_HOURS_THRESHOLD) {
+      flags.push('overloaded');
+    }
+    if (projectHeavyCount >= PROJECT_HEAVY_COUNT) {
+      flags.push('project-heavy');
+    }
+    if (incompleteData) {
+      flags.push('incomplete-data');
+    }
+
+    workload[key] = {
+      totalMCs,
+      totalHours,
+      breakdown,
+      flags
+    };
+  }
+
+  res.json({ workload });
 });
 
 export default router;

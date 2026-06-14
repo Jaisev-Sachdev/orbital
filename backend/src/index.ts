@@ -10,7 +10,7 @@ import planRoutes from './routes/plans';
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json());  // ← move these up, before ALL routes
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Courseway API is running' });
@@ -21,6 +21,8 @@ app.use('/profile', profileRoutes);
 app.use('/modules', moduleRoutes);
 app.use('/recommendations', recommendationRoutes);
 app.use('/plans', planRoutes);
+
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

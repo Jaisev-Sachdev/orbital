@@ -1,0 +1,61 @@
+{
+  "programme": "Bachelor of Computing in Computer Science",
+  "focusArea": "Artificial Intelligence",
+  "totalMCsRequired": 160,
+  "categories": [
+    {
+      "key": "university_requirements",
+      "label": "University Requirements (GE/UE)",
+      "type": "mc_total",
+      "mcsRequired": 20,
+      "notes": "General Education Pillars (GEH, GEC, GER, GEQ, GET, GEA) - any matching modules count toward this total."
+    },
+    {
+      "key": "core_foundation",
+      "label": "CS Foundation",
+      "type": "module_list",
+      "modules": ["CS1010", "CS1231", "MA1521", "MA1522", "ST2334"]
+    },
+    {
+      "key": "core_intermediate",
+      "label": "CS Core (Intermediate)",
+      "type": "module_list",
+      "modules": ["CS2030S", "CS2040S", "CS2100", "CS2103T", "CS2106", "CS2109S"]
+    },
+    {
+      "key": "it_professionalism",
+      "label": "IT Professionalism",
+      "type": "module_list",
+      "modules": ["IS1108", "ES2660"]
+    },
+    {
+      "key": "math_science",
+      "label": "Mathematics & Science",
+      "type": "module_list",
+      "modules": ["MA1521", "MA1522", "ST2334"]
+    },
+    {
+      "key": "industry_experience",
+      "label": "Industry Experience Requirement",
+      "type": "module_list",
+      "modules": ["CP3200", "CP3202", "CP3107", "CP3110"],
+      "minRequired": 1,
+      "notes": "Internship (CP3200/3202) or Independent Work Study (CP3107/3110) - only one required."
+    },
+    {
+      "key": "focus_primary_ai",
+      "label": "Primary Focus: Artificial Intelligence",
+      "type": "module_list",
+      "modules": ["CS3243", "CS4243", "CS4244", "CS4248", "CS3264", "CS4246", "CS5339"],
+      "minRequired": 5,
+      "notes": "Pick at least 5 modules satisfying the AI Primary Focus Area requirements (2 Foundation + 3 Breadth & Depth, per latest curriculum)."
+    },
+    {
+      "key": "unrestricted_electives",
+      "label": "Unrestricted Electives (UE)",
+      "type": "mc_total",
+      "mcsRequired": 32,
+      "notes": "Any modules not otherwise counted, used to top up to the 160 MC total."
+    }
+  ]
+}

@@ -12,25 +12,32 @@ async function syncModules() {
   let failed = 0;
 
   try {
-    // Step 1: fetch the full list of modules
     const { data: moduleList } = await axios.get(`${BASE_URL}/moduleList.json`);
     console.log(`Found ${moduleList.length} modules`);
 
-    // Step 2: fetch full details for each module and save to DB
     for (const mod of moduleList) {
       const moduleCode = String((mod as any)?.moduleCode ?? '').toUpperCase().trim();
 
       try {
         const { data } = await axios.get(`${BASE_URL}/modules/${moduleCode}.json`);
 
-        // figure out which semesters it's offered in
         const semesters = Array.isArray(data.semesterData)
           ? data.semesterData.map((s: any) => s.semester)
           : [];
 
+
         const credits = Number.parseInt(String(data.moduleCredit), 10);
         if (!Number.isFinite(credits)) {
           throw new Error(`Invalid moduleCredit: ${data.moduleCredit}`);
+        }
+
+        // NUSMods workload is [lecture, tutorial, lab, project, prep]
+        let workload: number[] = [];
+        if (Array.isArray(data.workload)) {
+          workload = data.workload.map((w: any) => {
+            const n = Number(w);
+            return Number.isFinite(n) ? n : 0;
+          });
         }
 
         await prisma.module.upsert({
@@ -41,6 +48,7 @@ async function syncModules() {
             description: data.description ?? null,
             prerequisite: data.prerequisite ?? null,
             semesters,
+            workload,
           },
           create: {
             moduleCode: data.moduleCode,
@@ -49,6 +57,7 @@ async function syncModules() {
             description: data.description ?? null,
             prerequisite: data.prerequisite ?? null,
             semesters,
+            workload,
           }
         });
 

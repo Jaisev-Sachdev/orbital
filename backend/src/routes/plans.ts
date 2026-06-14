@@ -257,4 +257,93 @@ router.post('/:id/slots/bulk', requireAuth, async (req: AuthRequest, res: Respon
   res.status(201).json({ message: `${added.count} module(s) added`, count: added.count });
 });
 
+// GET /plans/:id/workload: per-semester workload breakdown
+router.get('/:id/workload', requireAuth, async (req: AuthRequest, res: Response) => {
+  const plan = await prisma.plan.findFirst({
+    where: { id: String(req.params.id), userId: req.userId! }
+  });
+
+  if (!plan) {
+    res.status(404).json({ error: 'Plan not found' });
+    return;
+  }
+
+  const slots = await prisma.semesterSlot.findMany({
+    where: { planId: String(req.params.id) },
+    orderBy: [{ year: 'asc' }, { semester: 'asc' }]
+  });
+
+  const moduleCodes = [...new Set(slots.map(s => s.moduleCode))];
+  const modules = await prisma.module.findMany({
+    where: { moduleCode: { in: moduleCodes } }
+  });
+  const moduleMap = new Map(modules.map(m => [m.moduleCode, m]));
+
+  // Group slots by semester
+  const grouped: Record<string, typeof slots> = {};
+  for (const slot of slots) {
+    const key = `year${slot.year}_sem${slot.semester}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(slot);
+  }
+
+  const OVERLOAD_MC_THRESHOLD = 23;
+  const OVERLOAD_HOURS_THRESHOLD = 50;
+  const PROJECT_HEAVY_HOURS = 6; // lab + project hours/week to count a module as "project-heavy"
+  const PROJECT_HEAVY_COUNT = 2; // number of project-heavy modules to trigger the flag
+
+  const workload: Record<string, any> = {};
+
+  for (const [key, semSlots] of Object.entries(grouped)) {
+    let totalMCs = 0;
+    const breakdown = { lecture: 0, tutorial: 0, lab: 0, project: 0, prep: 0 };
+    let projectHeavyCount = 0;
+    let incompleteData = false;
+
+    for (const slot of semSlots) {
+      const mod = moduleMap.get(slot.moduleCode);
+      totalMCs += mod?.credits ?? 0;
+
+      const w = mod?.workload ?? [];
+      if (w.length < 5) {
+        incompleteData = true;
+        continue;
+      }
+
+      const [lecture, tutorial, lab, project, prep] = w;
+      breakdown.lecture += lecture;
+      breakdown.tutorial += tutorial;
+      breakdown.lab += lab;
+      breakdown.project += project;
+      breakdown.prep += prep;
+
+      if (lab + project >= PROJECT_HEAVY_HOURS) {
+        projectHeavyCount++;
+      }
+    }
+
+    const totalHours = Object.values(breakdown).reduce((sum, h) => sum + h, 0);
+
+    const flags: string[] = [];
+    if (totalMCs > OVERLOAD_MC_THRESHOLD || totalHours > OVERLOAD_HOURS_THRESHOLD) {
+      flags.push('overloaded');
+    }
+    if (projectHeavyCount >= PROJECT_HEAVY_COUNT) {
+      flags.push('project-heavy');
+    }
+    if (incompleteData) {
+      flags.push('incomplete-data');
+    }
+
+    workload[key] = {
+      totalMCs,
+      totalHours,
+      breakdown,
+      flags
+    };
+  }
+
+  res.json({ workload });
+});
+
 export default router;

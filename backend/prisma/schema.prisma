@@ -43,6 +43,8 @@ model Module {
   description  String?
   prerequisite String?
   semesters    Int[]
+  workload     Int[]   @default([])
+
 }
 
 model Plan {

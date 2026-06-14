@@ -28,7 +28,7 @@ export default function Home() {
         const { data } = await api.get("/profile");
         setProfileData(data.profile);
       } catch {
-        
+        // 401 handled by Axios interceptor — token cleared automatically
       }
     };
 
@@ -50,6 +50,7 @@ export default function Home() {
           </>
         )}
         <Link to="/onboarding">Start Onboarding</Link> | {" "}
+        <Link to="/dashboard">Dashboard</Link> | {" "}
         <Link to="/recommendations">Recommendations</Link>
       </nav>
 

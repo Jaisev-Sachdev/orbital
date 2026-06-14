@@ -5,7 +5,6 @@ import { NavDocuments } from "~/components/nav-documents"
 import { NavMain } from "~/components/nav-main"
 import { NavSecondary } from "~/components/nav-secondary"
 import { NavUser } from "~/components/nav-user"
-import  api  from "~/lib/api" // Import your custom Axios client
 import {
   Sidebar,
   SidebarContent,
@@ -17,62 +16,109 @@ import {
 } from "~/components/ui/sidebar"
 import { Calendar, Network, GraduationCap, Scale, LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon } from "lucide-react"
 
-// Static layout data (Removed the hardcoded user mock)
+
 const data = {
+  user: {
+    name: "shadcn",
+    email: "m@example.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
   navMain: [
     {
       title: "Planner",
       url: "#",
-      icon: <Calendar />,
+      icon: (
+        < Calendar
+        />
+      ),
     },
     {
       title: "Modules",
       url: "#",
-      icon: <FolderIcon />,
+      icon: (
+        < FolderIcon
+        />
+      ),
     },
     {
       title: "Prerequisites",
       url: "/prerequisites",
-      icon: <Network />,
+      icon: (
+        <Network
+        />
+      ),
     },
     {
       title: "Graduation",
       url: "#",
-      icon: <GraduationCap />,
+      icon: (
+        <GraduationCap
+        />
+      ),
     },
     {
       title: "Compare",
       url: "#",
-      icon: <Scale />,
+      icon: (
+        <Scale
+        />
+      ),
     },
   ],
   navClouds: [
     {
       title: "Capture",
-      icon: <CameraIcon />,
+      icon: (
+        <CameraIcon
+        />
+      ),
       isActive: true,
       url: "#",
       items: [
-        { title: "Active Proposals", url: "#" },
-        { title: "Archived", url: "#" },
+        {
+          title: "Active Proposals",
+          url: "#",
+        },
+        {
+          title: "Archived",
+          url: "#",
+        },
       ],
     },
     {
       title: "Proposal",
-      icon: <FileTextIcon />,
+      icon: (
+        <FileTextIcon
+        />
+      ),
       url: "#",
       items: [
-        { title: "Active Proposals", url: "#" },
-        { title: "Archived", url: "#" },
+        {
+          title: "Active Proposals",
+          url: "#",
+        },
+        {
+          title: "Archived",
+          url: "#",
+        },
       ],
     },
     {
       title: "Prompts",
-      icon: <FileTextIcon />,
+      icon: (
+        <FileTextIcon
+        />
+      ),
       url: "#",
       items: [
-        { title: "Active Proposals", url: "#" },
-        { title: "Archived", url: "#" },
+        {
+          title: "Active Proposals",
+          url: "#",
+        },
+        {
+          title: "Archived",
+          url: "#",
+        },
       ],
     },
   ],
@@ -80,34 +126,52 @@ const data = {
     {
       title: "Settings",
       url: "#",
-      icon: <Settings2Icon />,
+      icon: (
+        <Settings2Icon
+        />
+      ),
     },
     {
       title: "Get Help",
       url: "#",
-      icon: <CircleHelpIcon />,
+      icon: (
+        <CircleHelpIcon
+        />
+      ),
     },
     {
       title: "Search",
       url: "#",
-      icon: <SearchIcon />,
+      icon: (
+        <SearchIcon
+        />
+      ),
     },
   ],
   documents: [
     {
       name: "Onboarding",
       url: "../onboarding",
-      icon: <DatabaseIcon />,
+      icon: (
+        <DatabaseIcon
+        />
+      ),
     },
     {
       name: "Reports",
       url: "#",
-      icon: <FileChartColumnIcon />,
+      icon: (
+        <FileChartColumnIcon
+        />
+      ),
     },
     {
       name: "Word Assistant",
       url: "#",
-      icon: <FileIcon />,
+      icon: (
+        <FileIcon
+        />
+      ),
     },
   ],
 }
@@ -116,30 +180,6 @@ export function AppSidebar({
   isLoggedIn = false, 
   ...props 
 }: React.ComponentProps<typeof Sidebar> & { isLoggedIn?: boolean }) {
-  
-  const [profile, setProfile] = React.useState<{ name: string; email: string; avatar: string } | null>(null)
-
-  // Fetch the profile dynamically when the user is logged in
-  React.useEffect(() => {
-    if (isLoggedIn) {
-      api.get("/profile")
-        .then((res) => {
-          const profileData = res.data.profile
-          setProfile({
-            name: `${profileData.major} (Y${profileData.yearOfStudy})`,
-            email: profileData.faculty || "School of Computing",
-            avatar: "/avatars/shadcn.jpg" // Fallback to your existing avatar path
-          })
-        })
-        .catch((err) => {
-          console.error("Failed to load user profile in sidebar:", err)
-        })
-    } else {
-      // Clear profile if logged out
-      setProfile(null)
-    }
-  }, [isLoggedIn])
-
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -163,9 +203,8 @@ export function AppSidebar({
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        {/* Render NavUser if logged in and profile is fetched successfully */}
-        {isLoggedIn && profile ? (
-          <NavUser user={profile} />
+        {isLoggedIn ? (
+          <NavUser user={data.user} />
         ) : (
           <div className="flex flex-col gap-2 p-2">
             <Button asChild variant="default" className="w-full">

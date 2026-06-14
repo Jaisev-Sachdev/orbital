@@ -1,10 +1,27 @@
+/**
+ * Courseway — app.css
+ *
+ * Replaces shadcn's default light/grey tokens with the Courseway brand:
+ *   Navy    #0A1628  — backgrounds
+ *   Teal    #00C9A7  — accent / interactive
+ *   White   #F0F4FF  — text
+ *   Amber   #FFB347  — warnings only
+ *
+ * We permanently set dark mode (no system-preference toggle needed for now).
+ * shadcn components read from these CSS vars — so swapping them here
+ * re-skins everything automatically.
+ */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* ── Google Fonts: Inter (UI) + JetBrains Mono (module codes) ── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
 @custom-variant dark (&:is(.dark *));
+
+/* ── Tailwind theme aliases → CSS vars ── */
 @theme inline {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -57,11 +74,12 @@
   --cw-amber:  #FFB347;
 
   /* Derived shades */
-  --cw-navy-light:  #0F2040;   
-  --cw-navy-border: #1A2E4A;   
-  --cw-teal-dim:    #00A388;   
-  --cw-teal-glow:   rgba(0, 201, 167, 0.15); 
+  --cw-navy-light:  #0F2040;   /* cards, elevated surfaces */
+  --cw-navy-border: #1A2E4A;   /* subtle borders */
+  --cw-teal-dim:    #00A388;   /* teal hover */
+  --cw-teal-glow:   rgba(0, 201, 167, 0.15); /* teal bg tint */
 
+  /* shadcn semantic tokens → Courseway palette */
   --background:          var(--cw-navy);
   --foreground:          var(--cw-white);
 
@@ -71,6 +89,7 @@
   --popover:             var(--cw-navy-light);
   --popover-foreground:  var(--cw-white);
 
+  /* PRIMARY = teal (buttons, links, badges) */
   --primary:             var(--cw-teal);
   --primary-foreground:  var(--cw-navy);
 
@@ -91,6 +110,7 @@
 
   --radius: 0.625rem;
 
+  /* Sidebar — slightly lighter than background */
   --sidebar:                    #0D1D35;
   --sidebar-foreground:         var(--cw-white);
   --sidebar-primary:            var(--cw-teal);
@@ -101,6 +121,7 @@
   --sidebar-ring:               var(--cw-teal);
 }
 
+/* ── Base styles ── */
 html,
 body {
   background-color: var(--cw-navy);
@@ -118,7 +139,9 @@ body {
   }
 }
 
+/* ── Courseway utility classes ── */
 
+/* Module code — always JetBrains Mono */
 .module-code {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 0.8125rem;
@@ -126,7 +149,7 @@ body {
   letter-spacing: 0.03em;
 }
 
-
+/* Teal chip/badge — used for module codes throughout the app */
 .module-chip {
   display: inline-flex;
   align-items: center;
@@ -147,6 +170,7 @@ body {
   border-color: rgba(0, 201, 167, 0.5);
 }
 
+/* Step progress bar — used in onboarding */
 .step-connector {
   flex: 1;
   height: 2px;
@@ -159,6 +183,7 @@ body {
   background: var(--cw-teal);
 }
 
+/* Subtle card glow on hover */
 .card-hover {
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
@@ -168,6 +193,7 @@ body {
   box-shadow: 0 0 0 1px rgba(0, 201, 167, 0.15), 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
+/* Warning/amber — use sparingly */
 .text-warning { color: var(--cw-amber); }
 .bg-warning    { background: rgba(255, 179, 71, 0.15); }
 .border-warning{ border-color: rgba(255, 179, 71, 0.4); }

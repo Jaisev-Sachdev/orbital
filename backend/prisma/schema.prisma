@@ -44,7 +44,6 @@ model Module {
   prerequisite String?
   semesters    Int[]
   workload     Int[]   @default([])
-
 }
 
 model Plan {
@@ -63,7 +62,7 @@ model SemesterSlot {
   year       Int
   semester   Int
   moduleCode String
-  plan       Plan    @relation(fields: [planId], references: [id])
+  plan       Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@unique([planId, year, semester, moduleCode])
 }

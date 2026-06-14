@@ -84,11 +84,8 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  // Delete all slots first, then the plan
-  await prisma.$transaction([
-    prisma.semesterSlot.deleteMany({ where: { planId: String(req.params.id) } }),
-    prisma.plan.delete({ where: { id: String(req.params.id) } })
-  ]);
+  // Cascade delete is handled by the schema (onDelete: Cascade on SemesterSlot)
+  await prisma.plan.delete({ where: { id: String(req.params.id) } });
   res.json({ message: 'Plan deleted' });
 });
 
@@ -125,6 +122,16 @@ router.post('/:id/slots', requireAuth, async (req: AuthRequest, res: Response) =
 
     if (!normalizedModuleCode) {
       res.status(400).json({ error: 'moduleCode must be a non-empty string' });
+      return;
+    }
+
+    // Validate the module exists in the database
+    const moduleExists = await prisma.module.findUnique({
+      where: { moduleCode: normalizedModuleCode }
+    });
+
+    if (!moduleExists) {
+      res.status(404).json({ error: `Module ${normalizedModuleCode} not found` });
       return;
     }
 
@@ -302,10 +309,12 @@ router.get('/:id/workload', requireAuth, async (req: AuthRequest, res: Response)
 
     for (const slot of semSlots) {
       const mod = moduleMap.get(slot.moduleCode);
+      // Always count MCs regardless of workload data availability
       totalMCs += mod?.credits ?? 0;
 
       const w = mod?.workload ?? [];
       if (w.length < 5) {
+        // Skip only the hour breakdown for modules with incomplete workload data
         incompleteData = true;
         continue;
       }

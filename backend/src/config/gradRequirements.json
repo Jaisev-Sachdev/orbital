@@ -1,61 +1,61 @@
 {
-  "programme": "Bachelor of Computing in Computer Science",
+  "programme": "Bachelor of Computing (Honours) in Computer Science",
+  "cohort": "AY2025/2026",
   "focusArea": "Artificial Intelligence",
   "totalMCsRequired": 160,
+  "source": "https://www.comp.nus.edu.sg/cug/per-cohort/cs/cs-25-26/",
   "categories": [
     {
-      "key": "university_requirements",
-      "label": "University Requirements (GE/UE)",
+      "key": "common_curriculum",
+      "label": "Common Curriculum Requirements",
       "type": "mc_total",
-      "mcsRequired": 20,
-      "notes": "General Education Pillars (GEH, GEC, GER, GEQ, GET, GEA) - any matching modules count toward this total."
+      "mcsRequired": 40,
+      "notes": "University Level Requirements (6 pillars, 24 units) + Interdisciplinary/Cross-disciplinary courses (12 units) + Computer Ethics IS1108 (4 units). Key modules: CS1101S (Digital Literacy), ES2660 (Critique & Expression), IS1108 (Digital Ethics & Data Privacy), plus GEC/GES/GEN and a Data Literacy module (GEA1000/BT1101/ST1131/DSA1101)."
     },
     {
-      "key": "core_foundation",
-      "label": "CS Foundation",
+      "key": "core_foundation_and_intermediate",
+      "label": "Computer Science Foundation",
       "type": "module_list",
-      "modules": ["CS1010", "CS1231", "MA1521", "MA1522", "ST2334"]
-    },
-    {
-      "key": "core_intermediate",
-      "label": "CS Core (Intermediate)",
-      "type": "module_list",
-      "modules": ["CS2030S", "CS2040S", "CS2100", "CS2103T", "CS2106", "CS2109S"]
-    },
-    {
-      "key": "it_professionalism",
-      "label": "IT Professionalism",
-      "type": "module_list",
-      "modules": ["IS1108", "ES2660"]
+      "modules": ["CS1101S", "CS1231S", "CS2030S", "CS2040S", "CS2100", "CS2101", "CS2103T", "CS2106", "CS2109S", "CS3230"],
+      "mcsRequired": 36,
+      "notes": "CS2101 + CS2103T together = 8 units; must be taken in the same semester. Total foundation = 36 units."
     },
     {
       "key": "math_science",
-      "label": "Mathematics & Science",
+      "label": "Mathematics & Sciences",
       "type": "module_list",
-      "modules": ["MA1521", "MA1522", "ST2334"]
+      "modules": ["MA1521", "MA1522", "ST2334"],
+      "mcsRequired": 12
+    },
+    {
+      "key": "breadth_and_depth",
+      "label": "Computer Science Breadth & Depth",
+      "type": "mc_total",
+      "mcsRequired": 32,
+      "notes": "32 units of CS/IFS/CP-coded courses. Must include: (a) a satisfied Focus Area (3 Area Primary courses, >=1 at Level-4000+), (b) >=12 units at Level-4000+, (c) 6-12 units of Industry Experience (or CP4101 dissertation if GPA >= 4.0), (d) at most 12 units CP-coded (excluding Industry Experience)."
     },
     {
       "key": "industry_experience",
-      "label": "Industry Experience Requirement",
+      "label": "Industry Experience (within Breadth & Depth)",
       "type": "module_list",
-      "modules": ["CP3200", "CP3202", "CP3107", "CP3110"],
+      "modules": ["CP3200", "CP3202", "CP3107", "CP3110", "CP3880", "IS4010", "ETP3201L", "ETP3205", "CP4101"],
       "minRequired": 1,
-      "notes": "Internship (CP3200/3202) or Independent Work Study (CP3107/3110) - only one required."
+      "notes": "6-12 units required, counted within the 32-unit Breadth & Depth total above (not additional). CP4101 dissertation may substitute if GPA >= 4.0 after 112 units completed."
     },
     {
       "key": "focus_primary_ai",
       "label": "Primary Focus: Artificial Intelligence",
       "type": "module_list",
-      "modules": ["CS3243", "CS4243", "CS4244", "CS4248", "CS3264", "CS4246", "CS5339"],
-      "minRequired": 5,
-      "notes": "Pick at least 5 modules satisfying the AI Primary Focus Area requirements (2 Foundation + 3 Breadth & Depth, per latest curriculum)."
+      "modules": ["CS3243", "CS3244", "CS4243", "CS4244", "CS4246", "CS4248"],
+      "minRequired": 3,
+      "notes": "3 courses from AI Area Primaries, with at least one at Level-4000+ (CS3243/CS3244 are Level-3000; CS4243/CS4244/CS4246/CS4248 are Level-4000). Counts within the 32-unit Breadth & Depth total."
     },
     {
       "key": "unrestricted_electives",
-      "label": "Unrestricted Electives (UE)",
+      "label": "Unrestricted Electives",
       "type": "mc_total",
-      "mcsRequired": 32,
-      "notes": "Any modules not otherwise counted, used to top up to the 160 MC total."
+      "mcsRequired": 40,
+      "notes": "Students without A-level/H2 Maths must include MA1301/X bridging course here."
     }
   ]
 }

@@ -1,4 +1,16 @@
-
+/**
+ * Onboarding  —  app/routes/onboarding.tsx
+ *
+ * Changes from original:
+ *   - Wrapped in <ProtectedRoute> (redirects to /login if no token)
+ *   - Raw fetch() → api.post() (Axios client)
+ *   - localStorage.getItem("authToken") is now handled by the Axios interceptor
+ *     so we don't need to read the token manually here
+ *   - After finishing, calls auth.refreshProfile() to update AuthContext
+ *   - Courseway brand applied: navy background, teal accents, JetBrains Mono for module chips
+ *   - Cohort year is now a dropdown (AY2022/23 through AY2025/26)
+ *   - Goals saved to localStorage so recommendations page can use them
+ */
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router"
@@ -11,12 +23,15 @@ import { Label } from "~/components/ui/label"
 import { ProtectedRoute, useAuth } from "~/context/AuthContext"
 import api from "~/lib/api"
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ModuleSearchResult {
   moduleCode: string
   title: string
   credits: number
 }
+
+// ─── Step indicator ───────────────────────────────────────────────────────────
 
 function StepBar({ current }: { current: number }) {
   const steps = ["Profile", "Modules", "Goals"]
@@ -67,6 +82,8 @@ function StepBar({ current }: { current: number }) {
   )
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 function OnboardingContent() {
   const navigate = useNavigate()
   const { refreshProfile } = useAuth()
@@ -87,6 +104,7 @@ function OnboardingContent() {
   const [errorMessage, setErrorMessage] = useState("")
   const [isLoading, setIsLoading]       = useState(false)
 
+  // Debounced module search
   useEffect(() => {
     if (moduleSearch.length < 2) {
       setSearchResults([])
@@ -98,7 +116,7 @@ function OnboardingContent() {
         const { data } = await api.get(`/modules?search=${encodeURIComponent(moduleSearch)}`)
         setSearchResults(data.modules || [])
       } catch {
-        
+        // silent — user just sees no results
       } finally {
         setIsSearching(false)
       }
@@ -131,6 +149,7 @@ function OnboardingContent() {
     try {
       const yearOfStudyInt = parseInt(formData.year.replace(/\D/g, "")) || 1
 
+      // 1. Save profile
       await api.post("/profile", {
         major:       formData.major,
         faculty:     formData.faculty,
@@ -138,10 +157,12 @@ function OnboardingContent() {
         yearOfStudy: yearOfStudyInt,
       })
 
+      // 2. Save completed modules (only if any selected)
       if (formData.modules.length > 0) {
         await api.post("/profile/modules", { moduleCodes: formData.modules })
       }
 
+      // 3. Save goals to localStorage so recommendations page can pass them to the AI
       localStorage.setItem("courseGoals", formData.goals)
 
       await refreshProfile()
@@ -158,6 +179,7 @@ function OnboardingContent() {
     }
   }
 
+  // ── Render ──
 
   return (
     <main

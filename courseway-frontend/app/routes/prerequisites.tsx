@@ -1,9 +1,25 @@
+/**
+ * Prerequisites page  —  /prerequisites
+ *
+ * MS1 requirement: "Basic prerequisite display UI — show direct prereqs
+ * as a list on the frontend"
+ *
+ * What it does:
+ *   1. User types a module code (e.g. CS2040S)
+ *   2. Hits the backend GET /modules/:code/prerequisites endpoint
+ *   3. Shows the module title, the raw prerequisite text, and each
+ *      prerequisite code as a clickable chip (which searches that code)
+ *
+ * No auth required for this endpoint, so no ProtectedRoute needed.
+ */
+
 import { useState, useCallback } from 'react'
 import { Search, ChevronRight, AlertCircle, BookOpen, Loader2, ArrowRight } from 'lucide-react'
 import api from '~/lib/api'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface PrereqResult {
   moduleCode: string
@@ -17,6 +33,8 @@ interface ModuleDetail {
   credits: number
   description: string
 }
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function PrerequisitesPage() {
   const [query, setQuery] = useState('')
@@ -37,6 +55,7 @@ export default function PrerequisitesPage() {
     setQuery(normalized)
 
     try {
+      // Fetch prereqs and module detail in parallel
       const [prereqRes, moduleRes] = await Promise.all([
         api.get(`/modules/${normalized}/prerequisites`),
         api.get(`/modules/${normalized}`),
@@ -45,6 +64,7 @@ export default function PrerequisitesPage() {
       setResult(prereqRes.data)
       setModuleDetail(moduleRes.data.module)
 
+      // Add to history (deduplicated, max 8)
       setSearchHistory(prev => {
         const updated = [normalized, ...prev.filter(c => c !== normalized)]
         return updated.slice(0, 8)
@@ -223,6 +243,7 @@ export default function PrerequisitesPage() {
               </h3>
 
               {result.prerequisites.length === 0 ? (
+                /* No prerequisites */
                 <div className="flex items-center gap-3 py-3">
                   <div
                     className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
@@ -240,6 +261,7 @@ export default function PrerequisitesPage() {
                   </div>
                 </div>
               ) : (
+                /* Prerequisite chips — each is clickable to look up that module */
                 <div className="space-y-3">
                   <p className="text-sm mb-4" style={{ color: 'rgba(240,244,255,0.5)' }}>
                     You need to complete the following before taking {result.moduleCode}:

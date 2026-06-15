@@ -9,6 +9,7 @@ import { Loader2, Sparkles, AlertCircle } from "lucide-react"
 import { TooltipProvider } from "~/components/ui/tooltip"
 import api from "~/lib/api"
 
+// Define the shape of the data we expect from your backend
 type Recommendation = {
   moduleCode: string;
   title: string;
@@ -22,12 +23,14 @@ export default function RecommendationsPage() {
   const [error, setError] = useState("")
 
   useEffect(() => {
+    // 1. Check if the user is logged in. If not, kick them back to home.
     const token = localStorage.getItem("authToken")
     if (!token) {
       navigate("/")
       return
     }
-    
+
+    // 2. Fetch the AI recommendations, passing goals from onboarding if present
     const fetchRecommendations = async () => {
       try {
         const goals = localStorage.getItem("courseGoals") || ""

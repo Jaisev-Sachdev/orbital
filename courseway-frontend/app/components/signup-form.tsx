@@ -1,3 +1,13 @@
+/**
+ * SignupForm  —  app/components/signup-form.tsx
+ *
+ * Changes from original:
+ *   - Raw fetch() → api.post()
+ *   - On success, auto-logs in (calls /auth/login right after register)
+ *     and redirects to /onboarding so the user goes straight to setup
+ *   - Courseway brand styling
+ */
+
 import { useState } from "react"
 import { useNavigate, Link } from "react-router"
 import { cn } from "~/lib/utils"
@@ -36,13 +46,14 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
     }
 
     try {
-      
+      // 1. Register
       await api.post("/auth/register", { email, password })
 
+      // 2. Auto-login so the user doesn't have to log in again
       const { data } = await api.post("/auth/login", { email, password })
       login(data.token, email)
 
-    
+      // 3. Go straight to onboarding
       navigate("/onboarding")
     } catch (err: any) {
       const msg = err.response?.data?.error

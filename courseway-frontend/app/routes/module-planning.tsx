@@ -4,6 +4,16 @@ import { AppSidebar } from "~/components/app-sidebar"
 import { SiteHeader } from "~/components/site-header"
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar"
 import { TooltipProvider } from "~/components/ui/tooltip"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "~/components/ui/dialog"
+import { Input } from "~/components/ui/input"
+import { Button } from "~/components/ui/button"
 import api from "~/lib/api"
 
 interface Module {
@@ -25,9 +35,13 @@ const EMPTY_PLAN: PlanMap = {
 export default function PlanBuilder() {
   const [plan, setPlan] = useState<PlanMap>(EMPTY_PLAN)
   
-  // New state to hold all available plans
   const [plans, setPlans] = useState<{id: string, name: string}[]>([])
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null)
+
+  // New state for the create plan modal
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [newPlanName, setNewPlanName] = useState("")
+  const [isCreating, setIsCreating] = useState(false)
 
   // 1. Reusable function to fetch slots for a given plan ID
   const loadPlanSlots = async (planId: string) => {
@@ -62,7 +76,6 @@ export default function PlanBuilder() {
         if (loadedPlans.length > 0) {
           planId = loadedPlans[0].id
         } else {
-          // Create default plan if none exist
           const { data: newPlanData } = await api.post('/plans', { name: 'Main Plan' })
           planId = newPlanData.plan.id
           loadedPlans = [newPlanData.plan]
@@ -83,30 +96,36 @@ export default function PlanBuilder() {
   const handleSwitchPlan = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newPlanId = e.target.value
     setCurrentPlanId(newPlanId)
-    // Instantly reset UI while fetching to prevent seeing old data
     setPlan(EMPTY_PLAN) 
     loadPlanSlots(newPlanId)
   }
 
-  // 4. Handler to create a new plan
-  const handleCreatePlan = async () => {
-    const name = prompt("Enter a name for your new plan (e.g., 'Exchange Sem Plan'):")
-    if (!name?.trim()) return
+  // 4. Handlers to create a new plan via Modal
+  const handleOpenCreateModal = () => {
+    setNewPlanName("")
+    setIsCreateModalOpen(true)
+  }
 
+  const submitNewPlan = async () => {
+    if (!newPlanName.trim()) return
+    setIsCreating(true)
+    
     try {
-      const { data } = await api.post('/plans', { name: name.trim() })
+      const { data } = await api.post('/plans', { name: newPlanName.trim() })
       setPlans(prev => [...prev, data.plan])
       setCurrentPlanId(data.plan.id)
       setPlan(EMPTY_PLAN)
-      // New plans have no slots, but we can call it to be safe or just leave it empty
       loadPlanSlots(data.plan.id)
+      setIsCreateModalOpen(false) 
     } catch (error) {
       console.error("Failed to create new plan:", error)
       alert("Failed to create plan. Please try again.")
+    } finally {
+      setIsCreating(false)
     }
   }
 
-  // 5. Delete plan handler (optional extra utility)
+  // 5. Delete plan handler 
   const handleDeletePlan = async () => {
     if (!currentPlanId || plans.length <= 1) {
       return alert("You cannot delete your only plan!")
@@ -199,6 +218,48 @@ export default function PlanBuilder() {
         
         <SidebarInset className="flex flex-col h-screen overflow-hidden">
           <SiteHeader />
+
+          {/* ── Create Plan Modal ── */}
+          <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+            <DialogContent className="bg-[var(--cw-navy)] border-[var(--cw-navy-border)] text-[var(--cw-white)] sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Create New Plan</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Give your new module plan a name (e.g., "Exchange Sem Plan").
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="py-4">
+                <Input
+                  value={newPlanName}
+                  onChange={(e) => setNewPlanName(e.target.value)}
+                  placeholder="Enter plan name..."
+                  className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white focus-visible:ring-[var(--cw-teal)]"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') submitNewPlan()
+                  }}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="ghost"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="text-muted-foreground hover:text-white"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={submitNewPlan}
+                  disabled={!newPlanName.trim() || isCreating}
+                  className="bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)]"
+                >
+                  {isCreating ? "Saving..." : "Save Plan"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           
           <div className="px-8 pt-6 pb-2">
             <div className="flex items-center gap-4">
@@ -220,7 +281,7 @@ export default function PlanBuilder() {
                   </select>
                   
                   <button
-                    onClick={handleCreatePlan}
+                    onClick={handleOpenCreateModal}
                     className="text-xs bg-[var(--cw-teal-glow)] text-[var(--cw-teal)] border border-[rgba(0,201,167,0.3)] px-3 py-1.5 rounded-md hover:bg-[rgba(0,201,167,0.25)] transition-colors font-medium whitespace-nowrap"
                   >
                     + New Plan

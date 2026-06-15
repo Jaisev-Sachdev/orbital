@@ -376,8 +376,8 @@ router.get('/:id/requirements', requireAuth, async (req: AuthRequest, res: Respo
     where: { moduleCode: { in: moduleCodes } }
   });
 
-  const planModuleCodes = new Set(moduleCodes);
-  const totalMCs = modules.reduce((sum, m) => sum + (m.credits ?? 0), 0);
+   const planModuleCodes = new Set(modules.map(m => m.moduleCode));
+   const totalMCs = modules.reduce((sum, m) => sum + (m.credits ?? 0), 0);
 
   const categories = gradRequirements.categories.map((cat: any) => {
     if (cat.type === 'module_list') {

@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import prisma from '../lib/prisma';
 import requireAuth, { AuthRequest } from '../middleware/requireAuth';
+import gradRequirements from '../config/gradRequirements.json';
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   res.status(201).json({ message: 'Plan created', plan });
 });
 
-// GET /plans — get all plans for logged in user
+// GET /plans 
 router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const plans = await prisma.plan.findMany({
     where: { userId: req.userId! },
@@ -353,6 +354,71 @@ router.get('/:id/workload', requireAuth, async (req: AuthRequest, res: Response)
   }
 
   res.json({ workload });
+});
+
+// GET /plans/:id/requirements — graduation requirements progress
+router.get('/:id/requirements', requireAuth, async (req: AuthRequest, res: Response) => {
+  const plan = await prisma.plan.findFirst({
+    where: { id: String(req.params.id), userId: req.userId! }
+  });
+
+  if (!plan) {
+    res.status(404).json({ error: 'Plan not found' });
+    return;
+  }
+
+  const slots = await prisma.semesterSlot.findMany({
+    where: { planId: String(req.params.id) }
+  });
+
+  const moduleCodes = [...new Set(slots.map(s => s.moduleCode))];
+  const modules = await prisma.module.findMany({
+    where: { moduleCode: { in: moduleCodes } }
+  });
+
+   const planModuleCodes = new Set(modules.map(m => m.moduleCode));
+   const totalMCs = modules.reduce((sum, m) => sum + (m.credits ?? 0), 0);
+
+  const categories = gradRequirements.categories.map((cat: any) => {
+    if (cat.type === 'module_list') {
+      const taken = cat.modules.filter((code: string) => planModuleCodes.has(code));
+      const missing = cat.modules.filter((code: string) => !planModuleCodes.has(code));
+      const minRequired = cat.minRequired ?? cat.modules.length;
+
+      return {
+        key: cat.key,
+        label: cat.label,
+        type: cat.type,
+        required: cat.modules,
+        taken,
+        missing,
+        minRequired,
+        satisfied: taken.length >= minRequired,
+        notes: cat.notes ?? null
+      };
+    }
+
+    if (cat.type === 'mc_total') {
+      return {
+        key: cat.key,
+        label: cat.label,
+        type: cat.type,
+        mcsRequired: cat.mcsRequired,
+        satisfied: null, // cannot be determined precisely without per-module GE/UE tagging
+        notes: cat.notes ?? 'Approximate — based on overall MC total, not category-specific tagging.'
+      };
+    }
+
+    return { key: cat.key, label: cat.label, type: cat.type };
+  });
+
+  res.json({
+    programme: gradRequirements.programme,
+    focusArea: gradRequirements.focusArea,
+    totalMCsRequired: gradRequirements.totalMCsRequired,
+    totalMCsPlanned: totalMCs,
+    categories
+  });
 });
 
 export default router;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Welcome } from "../components/welcome";
-import { LogoutButton } from "../components/logout-button";
 import { Link } from "react-router-dom";
+import { LogoutButton } from "../components/logout-button";
+import { Button } from "~/components/ui/button"; // Assuming you have shadcn button installed
 import api from "../lib/api";
 
 export default function Home() {
@@ -28,7 +28,7 @@ export default function Home() {
         const { data } = await api.get("/profile");
         setProfileData(data.profile);
       } catch {
-        // 401 handled by Axios interceptor — token cleared automatically
+        // Silently fail if profile isn't set up yet
       }
     };
 
@@ -36,45 +36,96 @@ export default function Home() {
   }, []);
 
   return (
-    <div>
-      <nav style={{ padding: "1rem", borderBottom: "1px solid #ccc", marginBottom: "2rem" }}>
-        <Link to="/">Home</Link> | {" "}
-        {!isLoggedIn ? (
-          <>
-            <Link to="/login">Login</Link> | {" "}
-            <Link to="/signup">Signup</Link> | {""}
-          </>
-        ) : (
-          <>
-            <LogoutButton /> | {" "}
-          </>
-        )}
-        <Link to="/onboarding">Start Onboarding</Link> | {" "}
-        <Link to="/dashboard">Dashboard</Link> | {" "}
-        <Link to="/recommendations">Recommendations</Link>
+    <div className="min-h-screen bg-[var(--cw-navy)] text-[var(--cw-white)] flex flex-col">
+      
+      {/* ── Navbar ── */}
+      <nav className="flex items-center justify-between px-6 py-4 md:px-12 border-b border-[var(--cw-navy-border)]">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-xl tracking-tight text-[var(--cw-white)]">
+            Courseway
+          </span>
+        </div>
+
+        <div className="flex items-center gap-4">
+          {!isLoggedIn ? (
+            <>
+              <Link to="/login">
+                <Button variant="ghost" className="text-muted-foreground hover:text-white">
+                  Log In
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button className="bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)] font-semibold">
+                  Sign Up
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <LogoutButton />
+          )}
+        </div>
       </nav>
 
-      <div style={{ padding: "0 2rem", textAlign: "center", marginBottom: "2rem" }}>
+      {/* ── Main Content Area ── */}
+      <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
         {isLoggedIn ? (
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">
-              Welcome back, <span className="text-primary">{username}</span>!
+          
+          /* ── Logged In View ── */
+          <div className="space-y-6 max-w-xl fade-in">
+            <h1 className="text-4xl font-bold tracking-tight">
+              Welcome back, <span className="text-[var(--cw-teal)]">{username}</span>!
             </h1>
-
             {profileData && (
-              <p className="text-muted-foreground">
+              <p className="text-lg text-muted-foreground">
                 Year {profileData.yearOfStudy} • {profileData.major}
               </p>
             )}
+            <div className="pt-4 flex justify-center gap-4">
+              <Link to="/planner">
+                <Button size="lg" className="bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)] font-semibold">
+                  Open Module Planner
+                </Button>
+              </Link>
+              <Link to="/recommendations">
+                <Button size="lg" variant="outline" className="border-[var(--cw-navy-border)] text-white hover:bg-[var(--cw-navy-light)]">
+                  AI Recommendations
+                </Button>
+              </Link>
+            </div>
           </div>
-        ) : (
-          <h1 className="text-3xl font-bold tracking-tight">
-            Welcome to Courseway
-          </h1>
-        )}
-      </div>
 
-      <Welcome />
+        ) : (
+
+          /* ── Logged Out View (Landing Page Hero) ── */
+          <div className="space-y-6 max-w-3xl fade-in">
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
+              Master your <br />
+              <span className="text-[var(--cw-teal)] drop-shadow-[0_0_15px_rgba(0,201,167,0.3)]">
+                academic journey.
+              </span>
+            </h1>
+            
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Plan your modules, track prerequisites, and graduate on time with intelligent recommendations tailored specifically to your academic goals.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+              <Link to="/signup">
+                <Button size="lg" className="h-12 px-8 bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)] text-base font-bold shadow-lg shadow-[var(--cw-teal-glow)] transition-all hover:scale-105">
+                  Get Started for Free
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button size="lg" variant="outline" className="h-12 px-8 border-[var(--cw-navy-border)] text-white hover:bg-[var(--cw-navy-light)] text-base font-semibold">
+                  Log In to Account
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+        )}
+      </main>
+
     </div>
   );
 }

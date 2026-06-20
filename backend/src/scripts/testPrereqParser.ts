@@ -22,11 +22,13 @@ for (const [code, raw] of Object.entries(samples)) {
 
 console.log('\n=== EVALUATOR TESTS ===\n');
 
+let failedCount = 0;
 function test(code: string, raw: string, completed: string[], expected: ReturnType<typeof evaluatePrerequisite>) {
   const tree = parsePrerequisite(raw);
   const result = evaluatePrerequisite(tree, new Set(completed));
-  const pass = result === expected ? 'PASS' : 'FAIL';
-  console.log(`[${pass}] ${code} with completed=[${completed.join(',')}] => ${result} (expected ${expected})`);
+  const pass = result === expected;
+  if (!pass) failedCount++;
+  console.log(`[${pass ? 'PASS' : 'FAIL'}] ${code} with completed=[${completed.join(',')}] => ${result} (expected ${expected})`);
 }
 
 test('CS4218 (has prereq)', samples.CS4218, [], false);
@@ -38,4 +40,10 @@ test('CS4248 (nested and/or, missing one branch)', samples.CS4248, ['CS2109S', '
 test('CS3282 (n_of group, satisfied)', samples.CS3282, ['CS3281', 'CS3230', 'CS3231'], true);
 test('CS3282 (n_of group, only 1 of 2 needed)', samples.CS3282, ['CS3281', 'CS3230'], false);
 test('CS3240 (no modules completed, fails on module requirement regardless of programme)', samples.CS3240, [], false);
+test('CS3240 (satisfied via pure-module OR branch, programme irrelevant)', samples.CS3240, ['CS2030S'], true);
 test('CS3242 (grade clause => unverifiable)', samples.CS3242, ['CS3241'], 'unverifiable');
+
+if (failedCount > 0) {
+  console.error(`\n${failedCount} test(s) failed.`);
+  process.exitCode = 1;
+}

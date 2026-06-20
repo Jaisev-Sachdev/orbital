@@ -20,6 +20,35 @@ function cleanText(raw: string): string {
     .trim();
 }
 
+// Programme clauses ("must be undertaking N of <comma-separated list with their own
+// parens, e.g. "(Hons)">") are extracted in a dedicated pre-pass and replaced with a
+// placeholder token before any paren-depth scanning runs. This avoids the parens inside
+// programme names (e.g. "(Hons)") ever being mistaken for logical grouping, instead of
+// trying to make the depth-tracking scanner aware of two different modes at once.
+const PROGRAMME_PLACEHOLDER_PREFIX = '\u0000PROGRAMME_';
+
+function extractProgrammeClauses(text: string): { text: string; programmes: Map<string, string[]> } {
+  const programmes = new Map<string, string[]>();
+  let counter = 0;
+
+  // Matches from "must be undertaking N of" up to (but not including) the next
+  // top-level AND/OR keyword or the end of the string. Programme names in the real
+  // data never contain the literal words "AND"/"OR" as connectives, only as part of
+  // module/grade clauses that follow — so stopping at the first " AND "/" OR " (with
+  // optional preceding/following whitespace, case-insensitive) after "of" is safe.
+  const PROGRAMME_CLAUSE_RE = /must be undertaking \d+ of\s+(.+?)(?=\s*(?:AND|OR)\s*(?:must|either|\()|$)/gi;
+
+  const replaced = text.replace(PROGRAMME_CLAUSE_RE, (_match, list: string) => {
+    const key = `${PROGRAMME_PLACEHOLDER_PREFIX}${counter}\u0000`;
+    const names = list.split(',').map((p: string) => p.trim()).filter(Boolean);
+    programmes.set(key, names);
+    counter++;
+    return key;
+  });
+
+  return { text: replaced, programmes };
+}
+
 function splitTopLevel(text: string): { parts: string[]; connector: 'AND' | 'OR' | null } {
   let depth = 0;
   let lastSplit = 0;
@@ -27,6 +56,12 @@ function splitTopLevel(text: string): { parts: string[]; connector: 'AND' | 'OR'
   let connector: 'AND' | 'OR' | null = null;
 
   const CONNECTOR_RE = /^(AND|OR)\s*(?=must|either|\(|[A-Z]{2,4}\d)/i;
+
+  const precededByLowercase = (i: number): boolean => {
+    if (i === 0) return false;
+    return /[a-z]/.test(text[i - 1]);
+  };
+
   let i = 0;
   while (i < text.length) {
     const remainder = text.slice(i);
@@ -37,7 +72,7 @@ function splitTopLevel(text: string): { parts: string[]; connector: 'AND' | 'OR'
 
     if (depth === 0) {
       const m = CONNECTOR_RE.exec(remainder);
-      if (m) {
+      if (m && !precededByLowercase(i)) {
         const found = m[1].toUpperCase() as 'AND' | 'OR';
         connector = connector ?? found;
         parts.push(text.slice(lastSplit, i).trim());
@@ -73,11 +108,12 @@ function codesFromSlashList(list: string): string[] {
   return list.split('/').map(c => c.trim()).filter(isModuleCode);
 }
 
-function parseLeaf(text: string): PrereqNode {
+function parseLeaf(text: string, programmeMap: Map<string, string[]>): PrereqNode {
   const clean = unwrapParens(text.trim());
 
-  if (/must be undertaking \d+ of\b/i.test(clean)) {
-    return { type: 'OTHER', text: clean };
+  const programmes = programmeMap.get(clean);
+  if (programmes) {
+    return { type: 'PROGRAMME', programmes };
   }
 
   const allOfMatch = /must have completed all of ([\w/.]+) at a grade/i.exec(clean);
@@ -110,15 +146,15 @@ function parseLeaf(text: string): PrereqNode {
   return { type: 'OTHER', text: clean };
 }
 
-function parseExpression(text: string): PrereqNode {
+function parseExpression(text: string, programmeMap: Map<string, string[]>): PrereqNode {
   const unwrapped = unwrapParens(text);
   const { parts, connector } = splitTopLevel(unwrapped);
 
   if (parts.length <= 1 || !connector) {
-    return parseLeaf(unwrapped);
+    return parseLeaf(unwrapped, programmeMap);
   }
 
-  const children = parts.map(p => parseExpression(p));
+  const children = parts.map(p => parseExpression(p, programmeMap));
   return connector === 'AND'
     ? { type: 'AND', children }
     : { type: 'OR', children };
@@ -128,21 +164,26 @@ export function parsePrerequisite(raw: string | null | undefined): PrereqNode | 
   if (!raw || raw.trim() === '') return null;
   const cleaned = cleanText(raw);
   if (cleaned === '') return null;
-  return parseExpression(cleaned);
+
+  const { text: withPlaceholders, programmes } = extractProgrammeClauses(cleaned);
+  return parseExpression(withPlaceholders, programmes);
 }
 
 export function extractModuleCodes(node: PrereqNode | null): string[] {
   if (!node) return [];
-  switch (node.type) {
-    case 'MODULE':
-      return [node.code];
-    case 'AND':
-    case 'OR':
-    case 'N_OF':
-      return node.children.flatMap(extractModuleCodes);
-    default:
-      return [];
-  }
+  const codes = (function walk(n: PrereqNode): string[] {
+    switch (n.type) {
+      case 'MODULE':
+        return [n.code];
+      case 'AND':
+      case 'OR':
+      case 'N_OF':
+        return n.children.flatMap(walk);
+      default:
+        return [];
+    }
+  })(node);
+  return [...new Set(codes)];
 }
 
 // true/false reflect module-based logic; 'unverifiable' means the tree contains

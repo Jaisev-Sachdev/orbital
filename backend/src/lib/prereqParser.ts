@@ -20,22 +20,14 @@ function cleanText(raw: string): string {
     .trim();
 }
 
-// Programme clauses ("must be undertaking N of <comma-separated list with their own
-// parens, e.g. "(Hons)">") are extracted in a dedicated pre-pass and replaced with a
-// placeholder token before any paren-depth scanning runs. This avoids the parens inside
-// programme names (e.g. "(Hons)") ever being mistaken for logical grouping, instead of
-// trying to make the depth-tracking scanner aware of two different modes at once.
+
 const PROGRAMME_PLACEHOLDER_PREFIX = '\u0000PROGRAMME_';
 
 function extractProgrammeClauses(text: string): { text: string; programmes: Map<string, string[]> } {
   const programmes = new Map<string, string[]>();
   let counter = 0;
 
-  // Matches from "must be undertaking N of" up to (but not including) the next
-  // top-level AND/OR keyword or the end of the string. Programme names in the real
-  // data never contain the literal words "AND"/"OR" as connectives, only as part of
-  // module/grade clauses that follow — so stopping at the first " AND "/" OR " (with
-  // optional preceding/following whitespace, case-insensitive) after "of" is safe.
+
   const PROGRAMME_CLAUSE_RE = /must be undertaking \d+ of\s+(.+?)(?=\s*(?:AND|OR)\s*(?:must|either|\()|$)/gi;
 
   const replaced = text.replace(PROGRAMME_CLAUSE_RE, (_match, list: string) => {
@@ -186,8 +178,7 @@ export function extractModuleCodes(node: PrereqNode | null): string[] {
   return [...new Set(codes)];
 }
 
-// true/false reflect module-based logic; 'unverifiable' means the tree contains
-// PROGRAMME/OTHER conditions the app has no data to check — never silently assumed true.
+
 export type EvalResult = true | false | 'unverifiable';
 
 export function evaluatePrerequisite(node: PrereqNode | null, completedModules: Set<string>): EvalResult {

@@ -113,7 +113,12 @@ router.get('/modules', requireAuth, async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const codes = profile.completedMods.map(m => m.moduleCode);
+const codes = profile.completedMods.map(m => m.moduleCode);
+
+  if (codes.length === 0) {
+    res.json({ modules: [] });
+    return;
+  }
 
   const modules = await prisma.module.findMany({
     where: { moduleCode: { in: codes } },
@@ -122,11 +127,14 @@ router.get('/modules', requireAuth, async (req: AuthRequest, res: Response) => {
 
   const moduleMap = new Map(modules.map(m => [m.moduleCode, m]));
 
-  const enriched = profile.completedMods.map(m => ({
-    moduleCode: m.moduleCode,
-    title: moduleMap.get(m.moduleCode)?.title ?? null,
-    credits: moduleMap.get(m.moduleCode)?.credits ?? null
-  }));
+  const enriched = profile.completedMods.map(m => {
+    const mod = moduleMap.get(m.moduleCode);
+    return {
+      moduleCode: m.moduleCode,
+      title: mod?.title ?? null,
+      credits: mod?.credits ?? null
+    };
+  });
 
   res.json({ modules: enriched });
 });

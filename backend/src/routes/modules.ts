@@ -62,7 +62,8 @@ router.get('/:code/prerequisites', async (req: Request, res: Response) => {
 // GET /modules/:code/prerequisites/tree?depth=3
 router.get('/:code/prerequisites/tree', async (req: Request, res: Response) => {
   const code = String(req.params.code).toUpperCase();
-  const depth = Math.min(parseInt(String(req.query.depth ?? '3'), 10) || 3, 5);
+  const parsedDepth = Number.parseInt(String(req.query.depth ?? '3'), 10);
+  const depth = Number.isFinite(parsedDepth) ? Math.min(Math.max(parsedDepth, 0), 5) : 3;
 
   type ResolvedNode =
     | { type: 'MODULE'; code: string; title: string; prerequisiteTree: ResolvedNode | null }
@@ -72,17 +73,26 @@ router.get('/:code/prerequisites/tree', async (req: Request, res: Response) => {
     | { type: 'PROGRAMME'; programmes: string[] }
     | { type: 'OTHER'; text: string };
 
+  const moduleCache = new Map<string, { moduleCode: string; title: string; prerequisite: string | null } | null>();
+
+  async function getCachedModule(moduleCode: string) {
+    if (moduleCache.has(moduleCode)) return moduleCache.get(moduleCode)!;
+    const mod = await prisma.module.findUnique({
+      where: { moduleCode },
+      select: { moduleCode: true, title: true, prerequisite: true }
+    });
+    moduleCache.set(moduleCode, mod);
+    return mod;
+  }
+
   async function resolveNode(node: PrereqNode, remaining: number): Promise<ResolvedNode> {
     if (node.type === 'MODULE') {
-      if (remaining <= 0) {
-        return { type: 'MODULE', code: node.code, title: '', prerequisiteTree: null };
-      }
-      const mod = await prisma.module.findUnique({
-        where: { moduleCode: node.code },
-        select: { moduleCode: true, title: true, prerequisite: true }
-      });
+      const mod = await getCachedModule(node.code);
       if (!mod) {
         return { type: 'MODULE', code: node.code, title: '', prerequisiteTree: null };
+      }
+      if (remaining <= 0) {
+        return { type: 'MODULE', code: mod.moduleCode, title: mod.title, prerequisiteTree: null };
       }
       const childTree = parsePrerequisite(mod.prerequisite);
       const resolvedChild = childTree ? await resolveNode(childTree, remaining - 1) : null;
@@ -102,10 +112,7 @@ router.get('/:code/prerequisites/tree', async (req: Request, res: Response) => {
     return node;
   }
 
-  const root = await prisma.module.findUnique({
-    where: { moduleCode: code },
-    select: { moduleCode: true, title: true, prerequisite: true }
-  });
+  const root = await getCachedModule(code);
 
   if (!root) {
     res.status(404).json({ error: 'Module not found' });

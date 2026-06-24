@@ -54,12 +54,12 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     include: { completedMods: true }
   });
 
-  if (!profile) {
-    res.status(404).json({ error: 'Profile not found' });
+ if (!profile) {
+    res.status(200).json({ hasProfile: false, profile: null });
     return;
   }
 
-  res.json({ profile });
+  res.json({ hasProfile: true, profile });
 });
 
 // POST /profile/modules — add completed modules
@@ -100,7 +100,8 @@ router.post('/modules', requireAuth, async (req: AuthRequest, res: Response) => 
 
   res.json({ message: `${added.count} module(s) added`, count: added.count });
 });
-// GET /profile/modules — list completed modules
+
+// GET /profile/modules — list completed modules with title and credits
 router.get('/modules', requireAuth, async (req: AuthRequest, res: Response) => {
   const profile = await prisma.profile.findUnique({
     where: { userId: req.userId! },
@@ -112,7 +113,68 @@ router.get('/modules', requireAuth, async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  res.json({ modules: profile.completedMods.map(m => m.moduleCode) });
+const codes = profile.completedMods.map(m => m.moduleCode);
+
+  if (codes.length === 0) {
+    res.json({ modules: [] });
+    return;
+  }
+
+  const modules = await prisma.module.findMany({
+    where: { moduleCode: { in: codes } },
+    select: { moduleCode: true, title: true, credits: true }
+  });
+
+  const moduleMap = new Map(modules.map(m => [m.moduleCode, m]));
+
+  const enriched = profile.completedMods.map(m => {
+    const mod = moduleMap.get(m.moduleCode);
+    return {
+      moduleCode: m.moduleCode,
+      title: mod?.title ?? null,
+      credits: mod?.credits ?? null
+    };
+  });
+
+  res.json({ modules: enriched });
+});
+
+// DELETE /profile/modules — remove completed modules
+router.delete('/modules', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { moduleCodes } = req.body;
+
+  if (!moduleCodes || !Array.isArray(moduleCodes)) {
+    res.status(400).json({ error: 'moduleCodes must be an array' });
+    return;
+  }
+
+  const normalizedCodes = moduleCodes
+    .filter((code): code is string => typeof code === 'string')
+    .map(code => code.toUpperCase().trim())
+    .filter(code => code.length > 0);
+
+  if (normalizedCodes.length !== moduleCodes.length) {
+    res.status(400).json({ error: 'moduleCodes must be an array of non-empty strings' });
+    return;
+  }
+
+  const profile = await prisma.profile.findUnique({
+    where: { userId: req.userId! }
+  });
+
+  if (!profile) {
+    res.status(404).json({ error: 'Profile not found' });
+    return;
+  }
+
+  const deleted = await prisma.completedModule.deleteMany({
+    where: {
+      profileId: profile.id,
+      moduleCode: { in: normalizedCodes }
+    }
+  });
+
+  res.json({ message: `${deleted.count} module(s) removed`, count: deleted.count });
 });
 
 export default router;

@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { parsePrerequisite, extractModuleCodes } from '../lib/prereqParser';
 
 const router = Router();
 
@@ -46,16 +47,14 @@ router.get('/:code/prerequisites', async (req: Request, res: Response) => {
     return;
   }
 
-  // Extract module codes from the raw prerequisite text
-  // Module codes follow the pattern: 2-4 letters followed by 4 digits and optional letter
-  const prereqCodes = module.prerequisite
-    ? [...new Set(module.prerequisite.match(/[A-Z]{2,4}\d{4}[A-Z]*/g) ?? [])]
-    : [];
+  const tree = parsePrerequisite(module.prerequisite);
+  const prereqCodes = extractModuleCodes(tree);
 
   res.json({
     moduleCode: module.moduleCode,
     title: module.title,
     prerequisites: prereqCodes,
+    prerequisiteTree: tree,
     prerequisiteText: module.prerequisite ?? 'No prerequisites'
   });
 });

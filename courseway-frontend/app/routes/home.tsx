@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import { Link } from "react-router-dom";
 import { LogoutButton } from "../components/logout-button";
 import { Button } from "~/components/ui/button";
@@ -32,6 +33,7 @@ export default function Home() {
         const { data } = await api.get("/profile");
         setProfileData(data.profile);
       } catch {
+        // Silently fail if profile isn't set up yet
         // Silently fail if profile isn't set up yet
       }
     };

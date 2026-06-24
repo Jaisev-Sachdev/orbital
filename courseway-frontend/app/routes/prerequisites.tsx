@@ -24,6 +24,7 @@ import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar"
 import { TooltipProvider } from "~/components/ui/tooltip"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface PrereqResult {
   moduleCode: string
@@ -37,6 +38,8 @@ interface ModuleDetail {
   credits: number
   description: string
 }
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -66,6 +69,7 @@ export default function PrerequisitesPage() {
 
     try {
       // Fetch prereqs and module detail in parallel
+      // Fetch prereqs and module detail in parallel
       const [prereqRes, moduleRes] = await Promise.all([
         api.get(`/modules/${normalized}/prerequisites`),
         api.get(`/modules/${normalized}`),
@@ -74,6 +78,7 @@ export default function PrerequisitesPage() {
       setResult(prereqRes.data)
       setModuleDetail(moduleRes.data.module)
 
+      // Add to history (deduplicated, max 8)
       // Add to history (deduplicated, max 8)
       setSearchHistory(prev => {
         const updated = [normalized, ...prev.filter(c => c !== normalized)]

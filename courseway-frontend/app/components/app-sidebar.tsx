@@ -55,6 +55,10 @@ const data = {
         <GraduationCap
         />
       ),
+      icon: (
+        <GraduationCap
+        />
+      ),
     },
     {
       title: "Compare",
@@ -73,6 +77,10 @@ const data = {
         <Settings2Icon
         />
       ),
+      icon: (
+        <Settings2Icon
+        />
+      ),
     },
     {
       title: "Get Help",
@@ -81,10 +89,18 @@ const data = {
         <CircleHelpIcon
         />
       ),
+      icon: (
+        <CircleHelpIcon
+        />
+      ),
     },
     {
       title: "Search",
       url: "#",
+      icon: (
+        <SearchIcon
+        />
+      ),
       icon: (
         <SearchIcon
         />
@@ -103,6 +119,10 @@ const data = {
     {
       name: "Reports",
       url: "#",
+      icon: (
+        <FileChartColumnIcon
+        />
+      ),
       icon: (
         <FileChartColumnIcon
         />
@@ -146,6 +166,7 @@ export function AppSidebar({
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
+        
         {isLoggedIn ? (
           <NavUser user={data.user} />
         ) : (
@@ -162,3 +183,4 @@ export function AppSidebar({
     </Sidebar>
   )
 }
+

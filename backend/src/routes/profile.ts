@@ -54,7 +54,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     include: { completedMods: true }
   });
 
-  if (!profile) {
+ if (!profile) {
     res.status(200).json({ hasProfile: false, profile: null });
     return;
   }

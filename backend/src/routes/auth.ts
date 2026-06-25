@@ -84,7 +84,7 @@ router.post('/login', async (req: Request, res: Response) => {
   res.json({ message: 'Login successful', token });
 });
 
-// GET /auth/me — get logged in user's id, email and name
+// GET /auth/me — get logged in user's id, email, name and createdAt
 router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
   const user = await prisma.user.findUnique({
     where: { id: req.userId! },
@@ -108,13 +108,20 @@ router.put('/me', requireAuth, async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const user = await prisma.user.update({
-    where: { id: req.userId! },
-    data: { name: name.trim() },
-    select: { id: true, email: true, name: true }
-  });
-
-  res.json({ message: 'Name updated', user });
+  try {
+    const user = await prisma.user.update({
+      where: { id: req.userId! },
+      data: { name: name.trim() },
+      select: { id: true, email: true, name: true }
+    });
+    res.json({ message: 'Name updated', user });
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.status(500).json({ error: 'Something went wrong' });
+  }
 });
 
 export default router;

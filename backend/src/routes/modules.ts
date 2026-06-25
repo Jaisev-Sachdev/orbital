@@ -60,13 +60,14 @@ router.get('/:code/prerequisites', async (req: Request, res: Response) => {
 });
 
 // GET /modules/:code/prerequisites/tree?depth=3
+// must be registered before /:code/prerequisites to avoid Express matching "tree" as :code
 router.get('/:code/prerequisites/tree', async (req: Request, res: Response) => {
   const code = String(req.params.code).toUpperCase();
   const parsedDepth = Number.parseInt(String(req.query.depth ?? '3'), 10);
   const depth = Number.isFinite(parsedDepth) ? Math.min(Math.max(parsedDepth, 0), 5) : 3;
 
   type ResolvedNode =
-    | { type: 'MODULE'; code: string; title: string; prerequisiteTree: ResolvedNode | null }
+    | { type: 'MODULE'; code: string; title: string | null; prerequisiteTree: ResolvedNode | null }
     | { type: 'AND'; children: ResolvedNode[] }
     | { type: 'OR'; children: ResolvedNode[] }
     | { type: 'N_OF'; n: number; children: ResolvedNode[] }
@@ -85,27 +86,28 @@ router.get('/:code/prerequisites/tree', async (req: Request, res: Response) => {
     return mod;
   }
 
-  async function resolveNode(node: PrereqNode, remaining: number): Promise<ResolvedNode> {
+  async function resolveNode(node: PrereqNode, remaining: number, visited: Set<string>): Promise<ResolvedNode> {
     if (node.type === 'MODULE') {
       const mod = await getCachedModule(node.code);
       if (!mod) {
-        return { type: 'MODULE', code: node.code, title: '', prerequisiteTree: null };
+        return { type: 'MODULE', code: node.code, title: null, prerequisiteTree: null };
       }
-      if (remaining <= 0) {
+      if (remaining <= 0 || visited.has(node.code)) {
         return { type: 'MODULE', code: mod.moduleCode, title: mod.title, prerequisiteTree: null };
       }
+      const childVisited = new Set(visited).add(node.code);
       const childTree = parsePrerequisite(mod.prerequisite);
-      const resolvedChild = childTree ? await resolveNode(childTree, remaining - 1) : null;
+      const resolvedChild = childTree ? await resolveNode(childTree, remaining - 1, childVisited) : null;
       return { type: 'MODULE', code: mod.moduleCode, title: mod.title, prerequisiteTree: resolvedChild };
     }
 
     if (node.type === 'AND' || node.type === 'OR') {
-      const children = await Promise.all(node.children.map(c => resolveNode(c, remaining)));
+      const children = await Promise.all(node.children.map(c => resolveNode(c, remaining, visited)));
       return { type: node.type, children };
     }
 
     if (node.type === 'N_OF') {
-      const children = await Promise.all(node.children.map(c => resolveNode(c, remaining)));
+      const children = await Promise.all(node.children.map(c => resolveNode(c, remaining, visited)));
       return { type: 'N_OF', n: node.n, children };
     }
 
@@ -120,7 +122,7 @@ router.get('/:code/prerequisites/tree', async (req: Request, res: Response) => {
   }
 
   const tree = parsePrerequisite(root.prerequisite);
-  const resolvedTree = tree ? await resolveNode(tree, depth) : null;
+  const resolvedTree = tree ? await resolveNode(tree, depth, new Set([code])) : null;
 
   res.json({
     moduleCode: root.moduleCode,

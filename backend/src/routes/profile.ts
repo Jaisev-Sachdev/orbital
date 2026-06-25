@@ -113,7 +113,7 @@ router.get('/modules', requireAuth, async (req: AuthRequest, res: Response) => {
     return;
   }
 
-const codes = profile.completedMods.map(m => m.moduleCode);
+  const codes = profile.completedMods.map(m => m.moduleCode);
 
   if (codes.length === 0) {
     res.json({ modules: [] });

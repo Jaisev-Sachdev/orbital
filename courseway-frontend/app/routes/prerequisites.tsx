@@ -1,20 +1,17 @@
 /**
  * Prerequisites page  —  /prerequisites
  *
- * MS1 requirement: "Basic prerequisite display UI — show direct prereqs
- * as a list on the frontend"
- *
  * What it does:
  * 1. User types a module code (e.g. CS2040S)
- * 2. Hits the backend GET /modules/:code/prerequisites endpoint
- * 3. Shows the module title, the raw prerequisite text, and each
- * prerequisite code as a clickable chip (which searches that code)
+ * 2. Hits the backend GET /modules/:code/prerequisites/tree?depth=3 endpoint
+ * 3. Shows the module title and a nested prerequisite tree recursively resolving
+ * subtrees (AND/OR/N_OF logic).
  *
  * No auth required for this endpoint, so no ProtectedRoute needed.
  */
 
 import { useState, useCallback, useEffect } from 'react'
-import { Search, ChevronRight, AlertCircle, BookOpen, Loader2, ArrowRight } from 'lucide-react'
+import { Search, ChevronRight, AlertCircle, BookOpen, Loader2, ArrowRight, Waypoints } from 'lucide-react'
 import api from '~/lib/api'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -24,12 +21,24 @@ import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar"
 import { TooltipProvider } from "~/components/ui/tooltip"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface PrereqResult {
-  moduleCode: string
-  prerequisites: string[]
-  prerequisiteText: string
+interface TreeNode {
+  type: 'MODULE' | 'AND' | 'OR' | 'N_OF' | 'PROGRAMME' | 'OTHER'
+  code?: string
+  title?: string
+  text?: string
+  n?: number
+  children?: TreeNode[]
+  prerequisiteTree?: TreeNode | null
+}
+
+interface TreeResponse {
+  moduleCode?: string
+  prerequisiteTree?: TreeNode | null
+  prerequisiteText?: string
+  // Fallback in case the root itself is the TreeNode
+  type?: 'MODULE' | 'AND' | 'OR' | 'N_OF' | 'PROGRAMME' | 'OTHER'
+  children?: TreeNode[]
 }
 
 interface ModuleDetail {
@@ -39,13 +48,96 @@ interface ModuleDetail {
   description: string
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Recursive Tree Component ─────────────────────────────────────────────────
 
-// ─── Component ────────────────────────────────────────────────────────────────
+const PrerequisiteTree = ({ node, lookup }: { node: TreeNode; lookup: (code: string) => void }) => {
+  if (!node) return null
+
+  // 1. Module Node
+  if (node.type === 'MODULE') {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={() => node.code && lookup(node.code)}
+            className="module-chip group"
+            title={`Look up ${node.code}`}
+          >
+            <span>{node.code}</span>
+            <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+          {node.title && (
+            <span className="text-sm" style={{ color: 'rgba(240,244,255,0.7)' }}>
+              {node.title}
+            </span>
+          )}
+        </div>
+        
+        {/* Render child subtree if it exists */}
+        {node.prerequisiteTree && (
+          <div
+            className="ml-[1.15rem] pl-4 mt-2 mb-2"
+            style={{ borderLeft: '2px solid var(--cw-navy-border)' }}
+          >
+            <PrerequisiteTree node={node.prerequisiteTree} lookup={lookup} />
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // 2. Logical Node (AND, OR, N_OF)
+  if (node.type === 'AND' || node.type === 'OR' || node.type === 'N_OF') {
+    const label = node.type === 'AND' ? 'ALL OF' : node.type === 'OR' ? 'ANY OF' : `${node.n} OF`
+    
+    // Skip rendering logical node if it has no children
+    if (!node.children || node.children.length === 0) return null
+
+    return (
+      <div className="flex flex-col gap-3 mt-1 mb-2">
+        <div
+          className="text-xs font-bold px-2 py-1 rounded w-max tracking-wider flex items-center gap-1.5"
+          style={{
+            backgroundColor: 'rgba(240,244,255,0.05)',
+            color: 'rgba(240,244,255,0.6)',
+            border: '1px solid var(--cw-navy-border)'
+          }}
+        >
+          <Waypoints className="h-3 w-3" />
+          {label}
+        </div>
+        <div
+          className="ml-4 pl-4 flex flex-col gap-4"
+          style={{ borderLeft: '2px solid var(--cw-navy-border)' }}
+        >
+          {node.children.map((child, i) => (
+            <PrerequisiteTree key={i} node={child} lookup={lookup} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // 3. Programme / Other Conditions
+  return (
+    <div
+      className="text-sm pl-3 py-1 my-1"
+      style={{
+        borderLeft: '2px solid var(--cw-amber)',
+        color: 'rgba(240,244,255,0.6)',
+        fontStyle: 'italic'
+      }}
+    >
+      {node.text || node.title || 'Other Requirement'}
+    </div>
+  )
+}
+
+// ─── Main Page Component ──────────────────────────────────────────────────────
 
 export default function PrerequisitesPage() {
   const [query, setQuery] = useState('')
-  const [result, setResult] = useState<PrereqResult | null>(null)
+  const [treeResult, setTreeResult] = useState<TreeResponse | null>(null)
   const [moduleDetail, setModuleDetail] = useState<ModuleDetail | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -63,22 +155,20 @@ export default function PrerequisitesPage() {
 
     setIsLoading(true)
     setError('')
-    setResult(null)
+    setTreeResult(null)
     setModuleDetail(null)
     setQuery(normalized)
 
     try {
-      // Fetch prereqs and module detail in parallel
-      // Fetch prereqs and module detail in parallel
-      const [prereqRes, moduleRes] = await Promise.all([
-        api.get(`/modules/${normalized}/prerequisites`),
+      // Fetch new tree endpoint and module detail in parallel
+      const [treeRes, moduleRes] = await Promise.all([
+        api.get(`/modules/${normalized}/prerequisites/tree?depth=3`),
         api.get(`/modules/${normalized}`),
       ])
 
-      setResult(prereqRes.data)
+      setTreeResult(treeRes.data)
       setModuleDetail(moduleRes.data.module)
 
-      // Add to history (deduplicated, max 8)
       // Add to history (deduplicated, max 8)
       setSearchHistory(prev => {
         const updated = [normalized, ...prev.filter(c => c !== normalized)]
@@ -89,7 +179,7 @@ export default function PrerequisitesPage() {
       if (status === 404) {
         setError(`Module "${normalized}" not found. Check the module code and try again.`)
       } else {
-        setError('Failed to fetch prerequisites. Make sure the backend is running.')
+        setError('Failed to fetch prerequisite tree. Make sure the backend is running.')
       }
     } finally {
       setIsLoading(false)
@@ -100,6 +190,19 @@ export default function PrerequisitesPage() {
     e.preventDefault()
     lookup(query)
   }
+
+  // ─── Data parsing logic ───
+  // Handle both { prerequisiteTree: {...} } and raw TreeNode formats safely
+  const rootNode = treeResult?.prerequisiteTree !== undefined 
+    ? treeResult.prerequisiteTree 
+    : (treeResult as TreeNode | null)
+
+  const hasPrerequisites = !!rootNode && (
+    rootNode.type === 'MODULE' ||
+    rootNode.type === 'PROGRAMME' || 
+    rootNode.type === 'OTHER' ||
+    (rootNode.children && rootNode.children.length > 0)
+  )
 
   return (
     <TooltipProvider>
@@ -117,13 +220,13 @@ export default function PrerequisitesPage() {
             className="flex flex-1 flex-col min-h-screen"
             style={{ backgroundColor: 'var(--cw-navy)', color: 'var(--cw-white)' }}
           >
-            <div className="max-w-2xl mx-auto px-4 py-12 w-full">
+            <div className="max-w-3xl mx-auto px-4 py-12 w-full">
 
               {/* ── Header ── */}
               <div className="mb-10">
                 <h1 className="text-3xl font-bold mb-2">Prerequisite Checker</h1>
                 <p style={{ color: 'rgba(240,244,255,0.6)' }}>
-                  Enter a module code to see what you need to take it first.
+                  Enter a module code to see its full prerequisite tree structure.
                 </p>
               </div>
 
@@ -189,7 +292,7 @@ export default function PrerequisitesPage() {
                     className="h-5 w-5 animate-spin"
                     style={{ color: 'var(--cw-teal)' }}
                   />
-                  <span style={{ color: 'rgba(240,244,255,0.6)' }}>Looking up {query}…</span>
+                  <span style={{ color: 'rgba(240,244,255,0.6)' }}>Mapping tree for {query}…</span>
                 </div>
               )}
 
@@ -208,7 +311,7 @@ export default function PrerequisitesPage() {
               )}
 
               {/* ── Results ── */}
-              {result && moduleDetail && !isLoading && (
+              {treeResult && moduleDetail && !isLoading && (
                 <div className="space-y-4">
 
                   {/* Module header card */}
@@ -243,7 +346,7 @@ export default function PrerequisitesPage() {
                     </div>
                   </div>
 
-                  {/* Prerequisites section */}
+                  {/* Prerequisites Tree Section */}
                   <div
                     className="rounded-xl p-5"
                     style={{
@@ -251,15 +354,15 @@ export default function PrerequisitesPage() {
                       border: '1px solid var(--cw-navy-border)',
                     }}
                   >
-                    <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <h3 className="font-semibold mb-6 flex items-center gap-2">
                       <ChevronRight
                         className="h-4 w-4"
                         style={{ color: 'var(--cw-teal)' }}
                       />
-                      Prerequisites
+                      Prerequisite Tree
                     </h3>
 
-                    {result.prerequisites.length === 0 ? (
+                    {!hasPrerequisites || !rootNode ? (
                       /* No prerequisites */
                       <div className="flex items-center gap-3 py-3">
                         <div
@@ -278,42 +381,30 @@ export default function PrerequisitesPage() {
                         </div>
                       </div>
                     ) : (
-                      /* Prerequisite chips — each is clickable to look up that module */
-                      <div className="space-y-3">
-                        <p className="text-sm mb-4" style={{ color: 'rgba(240,244,255,0.5)' }}>
-                          You need to complete the following before taking {result.moduleCode}:
+                      /* Tree Render */
+                      <div className="text-sm">
+                         <p className="mb-4" style={{ color: 'rgba(240,244,255,0.5)' }}>
+                          You must satisfy the following conditions before taking {moduleDetail.moduleCode}:
                         </p>
-                        <div className="flex flex-wrap gap-2">
-                          {result.prerequisites.map(code => (
-                            <button
-                              key={code}
-                              onClick={() => lookup(code)}
-                              className="module-chip group"
-                              title={`Look up ${code}`}
-                            >
-                              <span>{code}</span>
-                              <ArrowRight
-                                className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity"
-                              />
-                            </button>
-                          ))}
+                        <div className="p-2">
+                          <PrerequisiteTree node={rootNode} lookup={lookup} />
                         </div>
                       </div>
                     )}
 
-                    {/* Raw prerequisite text from NUSMods */}
-                    {result.prerequisiteText && (
+                    {/* Raw prerequisite text from NUSMods (Fallback/Extra Info) */}
+                    {treeResult.prerequisiteText && (
                       <div
-                        className="mt-5 pt-4 text-sm"
+                        className="mt-6 pt-4 text-sm"
                         style={{
                           borderTop: '1px solid var(--cw-navy-border)',
                           color: 'rgba(240,244,255,0.45)',
                         }}
                       >
                         <span className="font-medium" style={{ color: 'rgba(240,244,255,0.6)' }}>
-                          NUSMods condition:{' '}
+                          Raw condition text:{' '}
                         </span>
-                        {result.prerequisiteText}
+                        {treeResult.prerequisiteText}
                       </div>
                     )}
                   </div>
@@ -324,7 +415,7 @@ export default function PrerequisitesPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setResult(null)
+                        setTreeResult(null)
                         setModuleDetail(null)
                         setError('')
                         setQuery('')
@@ -353,7 +444,7 @@ export default function PrerequisitesPage() {
               )}
 
               {/* ── Empty state (first load) ── */}
-              {!result && !error && !isLoading && (
+              {!treeResult && !error && !isLoading && (
                 <div
                   className="rounded-xl p-10 text-center"
                   style={{
@@ -366,7 +457,7 @@ export default function PrerequisitesPage() {
                     style={{ color: 'rgba(240,244,255,0.2)' }}
                   />
                   <p style={{ color: 'rgba(240,244,255,0.4)' }}>
-                    Enter a module code above to check its prerequisites.
+                    Enter a module code above to map its requirement tree.
                   </p>
                   <p className="text-sm mt-2" style={{ color: 'rgba(240,244,255,0.25)' }}>
                     Try CS2040S, CS2030S, or MA1521

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { parsePrerequisite, extractModuleCodes } from '../lib/prereqParser';
+import { parsePrerequisite, extractModuleCodes, PrereqNode } from '../lib/prereqParser';
 
 const router = Router();
 
@@ -49,14 +49,11 @@ router.get('/:code/prerequisites', async (req: Request, res: Response) => {
 
   const tree = parsePrerequisite(module.prerequisite);
   const prereqCodes = extractModuleCodes(tree);
-  const tree = parsePrerequisite(module.prerequisite);
-  const prereqCodes = extractModuleCodes(tree);
 
   res.json({
     moduleCode: module.moduleCode,
     title: module.title,
     prerequisites: prereqCodes,
-    prerequisiteTree: tree,
     prerequisiteTree: tree,
     prerequisiteText: module.prerequisite ?? 'No prerequisites'
   });

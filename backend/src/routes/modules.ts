@@ -60,7 +60,7 @@ router.get('/:code/prerequisites', async (req: Request, res: Response) => {
 });
 
 // GET /modules/:code/prerequisites/tree?depth=3
-// NOTE: must be registered before /:code/prerequisites to avoid Express matching "tree" as :code
+// must be registered before /:code/prerequisites to avoid Express matching "tree" as :code
 router.get('/:code/prerequisites/tree', async (req: Request, res: Response) => {
   const code = String(req.params.code).toUpperCase();
   const parsedDepth = Number.parseInt(String(req.query.depth ?? '3'), 10);

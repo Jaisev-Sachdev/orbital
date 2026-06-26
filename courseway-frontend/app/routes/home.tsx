@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-
 import { Link } from "react-router-dom";
-import { LogoutButton } from "../components/logout-button";
 import { Button } from "~/components/ui/button";
 import api from "../lib/api";
 import { AppSidebar } from "~/components/app-sidebar";
@@ -25,16 +23,28 @@ export default function Home() {
 
       setIsLoggedIn(true);
 
+      // Set fallback default first
       const email = localStorage.getItem("userEmail") || "";
       const namePrefix = email.split("@")[0];
       setUsername(namePrefix);
 
       try {
-        const { data } = await api.get("/profile");
-        setProfileData(data.profile);
+        // Fetch both auth details and academic profile in parallel
+        const [authRes, profileRes] = await Promise.all([
+          api.get("/auth/me").catch(() => null),
+          api.get("/profile").catch(() => null)
+        ]);
+
+        // If the user has explicitly set a display name, use it instead
+        if (authRes?.data?.user?.name) {
+          setUsername(authRes.data.user.name);
+        }
+
+        if (profileRes?.data?.profile) {
+          setProfileData(profileRes.data.profile);
+        }
       } catch {
-        // Silently fail if profile isn't set up yet
-        // Silently fail if profile isn't set up yet
+        // Silently fail if endpoints aren't available yet
       }
     };
 

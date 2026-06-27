@@ -226,7 +226,7 @@ model Module {
   credits      Int
   description  String?
   prerequisite String?           // raw NUSMods prerequisite text
-  workload     Int[]   @default([])  // [lecture, tutorial, lab, project, prep] hrs/week (integer)
+  workload     Int[]   @default([])  // [lecture, tutorial, lab, project, prep] hrs/week (integer tenths)
   semesters    Int[]             // e.g. [1, 2] = offered both sems
 }
 
@@ -377,8 +377,8 @@ All non-obvious logic is documented with inline comments:
 
 ```typescript
 // GET /modules/:code/prerequisites/tree?depth=3
-// NOTE: must be registered before /:code/prerequisites to avoid Express
-// matching "tree" as :code
+// Registered after /:code/prerequisites — Express matches on the full path,
+// so /tree is never captured by the shorter route regardless of order.
 router.get('/:code/prerequisites/tree', async (req, res) => { ... });
 ```
 
@@ -817,9 +817,9 @@ Results and structured findings will be documented in the MS2 project log on Sky
 | Issue | Priority | Planned Fix |
 |---|---|---|
 | Module recommendation pool capped at 50 | MS3 | Eligibility-based filtering using prereq evaluator |
-| Sequential NUSMods sync (~5 mins) | Low | Add concurrency with worker pool |
 | No automated tests | MS3 | Jest + Supertest + RTL |
 | Frontend dashboard uses some placeholder data | MS3 | Connect all panels to live backend |
+| `@prisma/client` and `pg` present in frontend `package.json` | Low | Remove unused backend dependencies from frontend |
 
 ---
 

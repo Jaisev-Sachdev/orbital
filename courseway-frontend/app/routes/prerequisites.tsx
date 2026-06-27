@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react'
-import { Search, ChevronRight, AlertCircle, BookOpen, Loader2, ArrowRight, Waypoints } from 'lucide-react'
+import { Search, ChevronRight, ChevronDown, AlertCircle, BookOpen, Loader2, ArrowRight, Waypoints } from 'lucide-react'
 import api from '~/lib/api'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -48,49 +48,114 @@ interface ModuleDetail {
   description: string
 }
 
-// ─── Recursive Tree Component ─────────────────────────────────────────────────
+// ─── Module Node (collapsible) ────────────────────────────────────────────────
 
-const PrerequisiteTree = ({ node, lookup }: { node: TreeNode; lookup: (code: string) => void }) => {
-  if (!node) return null
+/**
+ * Renders a single MODULE node.
+ *
+ * Collapsed by default. Click the chip to toggle the subtree.
+ * If `seen` already contains this code the subtree is not rendered at all
+ * (prevents the same prerequisite block from appearing dozens of times when
+ * multiple siblings share identical prerequisites).
+ */
+const ModuleNode = ({
+  node,
+  lookup,
+  seen,
+}: {
+  node: TreeNode
+  lookup: (code: string) => void
+  seen: Set<string>
+}) => {
+  const [expanded, setExpanded] = useState(false)
 
-  // 1. Module Node
-  if (node.type === 'MODULE') {
-    return (
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3 flex-wrap">
+  const code = node.code ?? ''
+  const hasSubtree = !!node.prerequisiteTree
+  // Don't recurse into a code we've already rendered higher up the tree
+  const alreadySeen = seen.has(code)
+  const canExpand = hasSubtree && !alreadySeen
+
+  // Pass a new set with this code added down to children
+  const childSeen = new Set(seen).add(code)
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Expand toggle — only shown when there is an unexpanded subtree */}
+        {canExpand ? (
           <button
-            onClick={() => node.code && lookup(node.code)}
-            className="module-chip group"
-            title={`Look up ${node.code}`}
+            onClick={() => setExpanded(e => !e)}
+            className="module-chip group flex items-center gap-1.5"
+            title={expanded ? 'Collapse' : 'Expand prerequisites'}
           >
-            <span>{node.code}</span>
+            {expanded
+              ? <ChevronDown className="h-3 w-3 opacity-60" />
+              : <ChevronRight className="h-3 w-3 opacity-60" />
+            }
+            <span>{code}</span>
+          </button>
+        ) : (
+          /* No subtree or already seen — plain chip that looks up the module */
+          <button
+            onClick={() => code && lookup(code)}
+            className="module-chip group"
+            title={`Look up ${code}`}
+          >
+            <span>{code}</span>
             <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
-          {node.title && (
-            <span className="text-sm" style={{ color: 'rgba(240,244,255,0.7)' }}>
-              {node.title}
-            </span>
-          )}
-        </div>
-        
-        {/* Render child subtree if it exists */}
-        {node.prerequisiteTree && (
-          <div
-            className="ml-[1.15rem] pl-4 mt-2 mb-2"
-            style={{ borderLeft: '2px solid var(--cw-navy-border)' }}
-          >
-            <PrerequisiteTree node={node.prerequisiteTree} lookup={lookup} />
-          </div>
+        )}
+
+        <span className="text-sm" style={{ color: 'rgba(240,244,255,0.7)' }}>
+          {node.title ?? ''}
+        </span>
+
+        {/* Show a small hint when the subtree is hidden because we already rendered it */}
+        {alreadySeen && hasSubtree && (
+          <span className="text-xs" style={{ color: 'rgba(240,244,255,0.35)', fontStyle: 'italic' }}>
+            (see above)
+          </span>
         )}
       </div>
-    )
+
+      {/* Subtree — only when expanded and not already rendered */}
+      {canExpand && expanded && (
+        <div
+          className="ml-[1.15rem] pl-4 mt-2 mb-2"
+          style={{ borderLeft: '2px solid var(--cw-navy-border)' }}
+        >
+          <PrerequisiteTree node={node.prerequisiteTree!} lookup={lookup} seen={childSeen} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Recursive Tree Component ─────────────────────────────────────────────────
+
+const PrerequisiteTree = ({
+  node,
+  lookup,
+  seen = new Set<string>(),
+}: {
+  node: TreeNode
+  lookup: (code: string) => void
+  seen?: Set<string>
+}) => {
+  if (!node) return null
+
+  // 1. Module Node — delegate to collapsible component
+  if (node.type === 'MODULE') {
+    return <ModuleNode node={node} lookup={lookup} seen={seen} />
   }
 
   // 2. Logical Node (AND, OR, N_OF)
   if (node.type === 'AND' || node.type === 'OR' || node.type === 'N_OF') {
-    const label = node.type === 'AND' ? 'ALL OF' : node.type === 'OR' ? 'ANY OF' : `${node.n} OF`
-    
-    // Skip rendering logical node if it has no children
+    const label =
+      node.type === 'AND' ? 'ALL OF' :
+      node.type === 'OR'  ? 'ANY OF' :
+      `${node.n} OF`
+
     if (!node.children || node.children.length === 0) return null
 
     return (
@@ -111,7 +176,7 @@ const PrerequisiteTree = ({ node, lookup }: { node: TreeNode; lookup: (code: str
           style={{ borderLeft: '2px solid var(--cw-navy-border)' }}
         >
           {node.children.map((child, i) => (
-            <PrerequisiteTree key={i} node={child} lookup={lookup} />
+            <PrerequisiteTree key={i} node={child} lookup={lookup} seen={seen} />
           ))}
         </div>
       </div>
@@ -193,13 +258,13 @@ export default function PrerequisitesPage() {
 
   // ─── Data parsing logic ───
   // Handle both { prerequisiteTree: {...} } and raw TreeNode formats safely
-  const rootNode = treeResult?.prerequisiteTree !== undefined 
-    ? treeResult.prerequisiteTree 
+  const rootNode = treeResult?.prerequisiteTree !== undefined
+    ? treeResult.prerequisiteTree
     : (treeResult as TreeNode | null)
 
   const hasPrerequisites = !!rootNode && (
     rootNode.type === 'MODULE' ||
-    rootNode.type === 'PROGRAMME' || 
+    rootNode.type === 'PROGRAMME' ||
     rootNode.type === 'OTHER' ||
     (rootNode.children && rootNode.children.length > 0)
   )
@@ -213,7 +278,7 @@ export default function PrerequisitesPage() {
         } as React.CSSProperties}
       >
         <AppSidebar variant="inset" isLoggedIn={isLoggedIn} />
-        
+
         <SidebarInset>
           <SiteHeader />
           <main
@@ -226,7 +291,7 @@ export default function PrerequisitesPage() {
               <div className="mb-10">
                 <h1 className="text-3xl font-bold mb-2">Prerequisite Checker</h1>
                 <p style={{ color: 'rgba(240,244,255,0.6)' }}>
-                  Enter a module code to see its full prerequisite tree structure.
+                  Enter a module code to see its full prerequisite tree. Click any module chip to expand its own prerequisites.
                 </p>
               </div>
 
@@ -360,6 +425,9 @@ export default function PrerequisitesPage() {
                         style={{ color: 'var(--cw-teal)' }}
                       />
                       Prerequisite Tree
+                      <span className="text-xs font-normal ml-1" style={{ color: 'rgba(240,244,255,0.4)' }}>
+                        — click a module chip to expand its prerequisites
+                      </span>
                     </h3>
 
                     {!hasPrerequisites || !rootNode ? (
@@ -383,11 +451,15 @@ export default function PrerequisitesPage() {
                     ) : (
                       /* Tree Render */
                       <div className="text-sm">
-                         <p className="mb-4" style={{ color: 'rgba(240,244,255,0.5)' }}>
+                        <p className="mb-4" style={{ color: 'rgba(240,244,255,0.5)' }}>
                           You must satisfy the following conditions before taking {moduleDetail.moduleCode}:
                         </p>
                         <div className="p-2">
-                          <PrerequisiteTree node={rootNode} lookup={lookup} />
+                          <PrerequisiteTree
+                            node={rootNode}
+                            lookup={lookup}
+                            seen={new Set([moduleDetail.moduleCode])}
+                          />
                         </div>
                       </div>
                     )}

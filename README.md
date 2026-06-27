@@ -4,6 +4,8 @@
 
 NUS Orbital 2026 · Apollo 11 · Team Courseway
 
+> **Live:** Frontend at [courseway-frontend.vercel.app](https://courseway-frontend.vercel.app) · Backend at [courseway-backend-w5ua.onrender.com](https://courseway-backend-w5ua.onrender.com)
+
 ---
 
 ## What is Courseway?
@@ -37,6 +39,7 @@ Courseway solves this by:
 | Database | PostgreSQL + Prisma ORM (v6) |
 | AI | Anthropic Claude API (claude-sonnet-4) |
 | Module Data | NUSMods Public API (2025-2026) |
+| Hosting | Vercel (frontend) + Render (backend + PostgreSQL) |
 
 ---
 
@@ -222,15 +225,16 @@ model Module {
   credits      Int
   description  String?
   prerequisite String?           // raw NUSMods prerequisite text
-  workload     Float[]           // [lecture, tutorial, lab, project, prep] hrs/week
+  workload     Int[]   @default([])  // [lecture, tutorial, lab, project, prep] hrs/week (integer)
   semesters    Int[]             // e.g. [1, 2] = offered both sems
 }
 
 model Plan {
   id        String         @id @default(uuid())
   userId    String
-  name      String
+  name      String         @default("My Plan")
   createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
   user      User           @relation(fields: [userId], references: [id])
   semesters SemesterSlot[]
 }
@@ -241,7 +245,7 @@ model SemesterSlot {
   year       Int
   semester   Int
   moduleCode String
-  plan       Plan   @relation(fields: [planId], references: [id])
+  plan       Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
   @@unique([planId, year, semester, moduleCode])
 }
 ```
@@ -446,6 +450,24 @@ npx prisma studio     # Open visual database browser
 npx prisma migrate dev --name <name>  # Create a new migration
 ```
 
+### Deployment
+
+The backend is deployed on **Render** (Singapore region) and the frontend on **Vercel**.
+
+| Service | URL |
+|---|---|
+| Frontend | https://courseway-frontend.vercel.app |
+| Backend | https://courseway-backend-w5ua.onrender.com |
+
+Production migrations are run by pointing the local Prisma CLI at the Render External Database URL:
+
+```powershell
+$env:DATABASE_URL = "<render-external-db-url>"
+npx prisma migrate deploy
+```
+
+Note: Render's free tier spins down after 15 minutes of inactivity. The first request after a cold start may take 30-60 seconds. Subsequent requests are fast.
+
 ---
 
 ## Frontend Setup
@@ -464,6 +486,16 @@ npm run dev
 
 Frontend runs at `http://localhost:5173`
 
+### Environment Variables
+
+Create a `.env` file inside `courseway-frontend/`:
+
+```env
+VITE_API_URL=http://localhost:3001
+```
+
+In production, set `VITE_API_URL` to the deployed backend URL (e.g. `https://courseway-backend-w5ua.onrender.com`). The Axios client in `app/lib/api.ts` reads this at build time and falls back to `http://localhost:3001` if unset.
+
 ### Pages
 
 | Route | Auth Required | Description |
@@ -480,7 +512,8 @@ Frontend runs at `http://localhost:5173`
 
 ## API Documentation
 
-Base URL: `http://localhost:3001`
+Base URL (local): `http://localhost:3001`
+Base URL (production): `https://courseway-backend-w5ua.onrender.com`
 
 > Protected routes require the header: `Authorization: Bearer <token>`
 
@@ -724,17 +757,13 @@ All API endpoints tested via Thunder Client during development:
 
 ## User Testing
 
-We recruited 5 NUS students (Year 1-2, School of Computing) before MS2. Test tasks:
+We recruited 5 NUS students (Year 1-2, School of Computing) and tested the following tasks before MS2 submission:
 1. Register and complete onboarding from scratch
 2. Assess whether AI recommendations seem relevant to their goals
 3. Build a 2-year plan and check workload flags
-4. Use the prerequisite tree to trace the path to CS3230
+4. Use the prerequisite tree to trace a module path
 
-**Findings:**
-- Students found the onboarding flow straightforward; all 5 completed it without assistance
-- AI recommendations were rated as relevant by 4 out of 5 students
-- The workload overload flag was considered the most useful new MS2 feature
-- Requested: semester-by-semester view with drag and drop reordering (planned for MS3)
+Results and structured findings will be documented in the MS2 project log on Skylab.
 
 ---
 
@@ -764,6 +793,7 @@ We recruited 5 NUS students (Year 1-2, School of Computing) before MS2. Test tas
 - [x] Enriched GET /profile/modules: returns title and credits per module
 - [x] DELETE /profile/modules endpoint
 - [x] hasProfile flag on GET /profile: 200 instead of 404 for new users
+- [x] Deployment: backend on Render, frontend on Vercel, production DB migrated and seeded
 - [x] User testing with 5 NUS students
 - [x] GitHub Actions CI pipeline
 - [x] README updated for MS2

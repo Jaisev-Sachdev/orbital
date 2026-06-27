@@ -12,7 +12,7 @@ NUS Orbital 2026 · Apollo 11 · THE Team · Courseway
 
 Courseway helps NUS students plan their academic journey more effectively. Students input their major, year of study, and completed modules to receive personalised, AI-powered module recommendations and build a 4-year academic plan.
 
-The core philosophy is a **rules engine with an AI brain**: deterministic logic handles prerequisite checking, workload calculation, and graduation requirements, while the AI layer provides personalised recommendations and explanations. Recommendations are always grounded in real NUSMods data and never hallucinated.
+The core philosophy is a **rules engine with an AI brain**: deterministic logic handles prerequisite checking and workload calculation, while the AI layer provides personalised recommendations and explanations. Recommendations are always grounded in real NUSMods data and never hallucinated.
 
 ---
 
@@ -119,15 +119,7 @@ For each semester in a plan, the backend computes total MCs, total weekly hours 
 
 ---
 
-### Feature 8 — Graduation Requirements Tracker
-
-The backend checks the modules in a plan against the AY2025/26 CS curriculum config (160 MCs). Each requirement category reports which modules are taken, which are missing, and whether the category is satisfied.
-
-![Requirements](docs/screenshots/requirements.png)
-
----
-
-### Feature 9 — Recursive Prerequisite Tree
+### Feature 8 — Recursive Prerequisite Tree
 
 A hand-written recursive descent parser converts raw NUSMods prerequisite strings into an AST with node types `MODULE`, `AND`, `OR`, `N_OF`, `PROGRAMME`, and `OTHER`. The tree endpoint recursively resolves each MODULE node up to a configurable depth (default 3, max 5), enriching each node with its title and its own prerequisite subtree. A per-request module cache avoids redundant DB queries and a visited set guards against circular prerequisites.
 
@@ -135,7 +127,7 @@ A hand-written recursive descent parser converts raw NUSMods prerequisite string
 
 ---
 
-### Feature 10 — User Profile with Display Name
+### Feature 9 — User Profile with Display Name
 
 Users can set and update a display name via `PUT /auth/me`. `GET /auth/me` returns the user's id, email, name, and account creation date.
 
@@ -151,15 +143,13 @@ orbital/
 │   │   │   ├── auth.ts             # Register, login, GET/PUT /auth/me
 │   │   │   ├── profile.ts          # Profile + completed modules (CRUD)
 │   │   │   ├── modules.ts          # Module search, prerequisites, tree
-│   │   │   ├── plans.ts            # Plans, slots, workload, requirements
+│   │   │   ├── plans.ts            # Plans, slots, workload
 │   │   │   └── recommendations.ts  # AI recommendations
 │   │   ├── middleware/
 │   │   │   └── requireAuth.ts      # JWT verification middleware
 │   │   ├── lib/
 │   │   │   ├── prisma.ts           # Prisma client singleton
 │   │   │   └── prereqParser.ts     # Prerequisite tokenizer + AST parser + evaluator
-│   │   ├── config/
-│   │   │   └── gradRequirements.json  # AY2025/26 CS graduation requirements
 │   │   ├── scripts/
 │   │   │   └── syncModules.ts      # NUSMods data sync script
 │   │   └── index.ts                # Server entry point
@@ -175,7 +165,7 @@ orbital/
         │   ├── recommendations.tsx     # AI recommendations
         │   ├── prerequisites.tsx       # Prerequisite checker
         │   ├── dashboard.tsx           # Authenticated home with sidebar layout
-        │   └── module-planning.tsx     # Plan builder + workload + requirements
+        │   └── module-planning.tsx     # Plan builder + workload
         ├── components/
         │   ├── login-form.tsx
         │   ├── signup-form.tsx
@@ -251,14 +241,6 @@ model SemesterSlot {
 }
 ```
 
-The entity-relationship diagram below shows the six core models and how they relate.
-
-![ER Diagram](docs/diagrams/er-diagram.png)
-
-The use case diagram below shows the interactions between the Student actor and the system.
-
-![Use Case Diagram](docs/diagrams/use-case-diagram.png)
-
 ---
 
 ## Design Decisions
@@ -273,7 +255,7 @@ JWTs are stateless, so the server does not need to store session data. Tokens ar
 
 ### Why a rules engine + AI rather than pure AI?
 
-LLMs can hallucinate prerequisite rules and graduation requirements. Deterministic logic in the backend handles prerequisite checking, workload calculation, and requirement satisfaction. The AI layer is used only for explanation and personalised ranking, so recommendations are always factually grounded.
+LLMs can hallucinate prerequisite rules. Deterministic logic in the backend handles prerequisite checking and workload calculation. The AI layer is used only for explanation and personalised ranking, so recommendations are always factually grounded.
 
 ### Why Prisma over raw SQL?
 
@@ -366,7 +348,6 @@ All user input is normalised (trimmed, uppercased for module codes, lowercased f
 | `src/routes/` | One file per resource: auth, profile, modules, plans, recommendations |
 | `src/middleware/` | Cross-cutting request handling: JWT auth |
 | `src/lib/` | Shared utilities: database client, prerequisite parser |
-| `src/config/` | Static config: graduation requirements JSON |
 | `src/scripts/` | One-off operational scripts: NUSMods sync |
 
 ---
@@ -621,7 +602,7 @@ Response: {
 }
 ```
 
-### Workload and Requirements
+### Workload
 
 ```
 GET /plans/:id/workload  (protected)
@@ -634,24 +615,6 @@ Response: {
       "flags": []   // "overloaded" | "project-heavy" | "incomplete-data"
     }
   }
-}
-
-GET /plans/:id/requirements  (protected)
-Response: {
-  "programme": "Computer Science",
-  "totalMCsRequired": 160,
-  "totalMCsPlanned": 112,
-  "categories": [
-    {
-      "key": "cs_foundation",
-      "label": "CS Foundation",
-      "type": "module_list",
-      "required": [...],
-      "taken": [...],
-      "missing": [...],
-      "satisfied": false
-    }
-  ]
 }
 ```
 
@@ -669,8 +632,6 @@ Response: { "recommendations": [{ moduleCode, title, reason }] }
 
 ### Git Workflow
 
-![GitHub Branches](docs/diagrams/github-branches.png)
-
 - `main` — stable, protected. Direct pushes blocked via branch protection rules.
 - Feature branches use `feat/`, `fix/`, `docs/` prefixes.
 - Every change goes through a pull request.
@@ -685,8 +646,6 @@ Every PR is reviewed by GitHub Copilot. Issues are triaged by severity:
 - **Medium** — tracked as GitHub Issues
 
 ### CI/CD
-
-![CI Passing](docs/diagrams/github-actions-ci.png)
 
 ```yaml
 # .github/workflows/ci.yml
@@ -746,7 +705,6 @@ All API endpoints tested via Thunder Client during development:
 | `POST /plans/:id/slots/bulk` | Multiple modules, partial duplicates |
 | `GET /plans/:id/slots` | Enriched with title and credits, grouped by semester |
 | `GET /plans/:id/workload` | Overloaded semester, project-heavy flag, incomplete data |
-| `GET /plans/:id/requirements` | Partial requirements, all satisfied |
 | `POST /recommendations` | With goals, without goals, missing profile |
 
 ### Automated Testing (MS3 Plan)
@@ -787,7 +745,6 @@ Results and structured findings will be documented in the MS2 project log on Sky
 - [x] 4-year plan builder with semester slots (add, remove, bulk add)
 - [x] Plan management: create, rename, delete, retrieve
 - [x] Workload estimator per semester with overload and project-heavy flags
-- [x] Graduation requirements tracker against AY2025/26 CS curriculum
 - [x] Recursive prerequisite tree parser (tokenizer + AST + evaluator)
 - [x] Prerequisite tree endpoint with depth control, memoisation, and circular guard
 - [x] User profile with optional display name (GET/PUT /auth/me)
@@ -800,6 +757,7 @@ Results and structured findings will be documented in the MS2 project log on Sky
 - [x] README updated for MS2
 
 ### MS3 — Extended System (27 July 2026)
+- [ ] Graduation requirements tracker
 - [ ] Interactive prerequisite chain graph visualisation
 - [ ] Drag and drop semester slot reordering
 - [ ] Plan variants: create and compare up to 3 plans side by side

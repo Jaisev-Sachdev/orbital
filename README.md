@@ -170,11 +170,12 @@ orbital/
 └── courseway-frontend/         # React Router v7 application
     └── app/
         ├── routes/
-        │   ├── home.tsx             # Landing page
-        │   ├── onboarding.tsx       # 3-step profile setup
-        │   ├── recommendations.tsx  # AI recommendations
-        │   ├── prerequisites.tsx    # Prerequisite checker
-        │   └── dashboard.tsx        # Plan builder + workload + requirements
+        │   ├── home.tsx                # Landing page
+        │   ├── onboarding.tsx          # 3-step profile setup
+        │   ├── recommendations.tsx     # AI recommendations
+        │   ├── prerequisites.tsx       # Prerequisite checker
+        │   ├── dashboard.tsx           # Authenticated home with sidebar layout
+        │   └── module-planning.tsx     # Plan builder + workload + requirements
         ├── components/
         │   ├── login-form.tsx
         │   ├── signup-form.tsx
@@ -506,7 +507,7 @@ In production, set `VITE_API_URL` to the deployed backend URL (e.g. `https://cou
 | `/onboarding` | Yes | 3-step profile setup (major, modules, goals) |
 | `/recommendations` | Yes | AI module recommendations |
 | `/prerequisites` | No | Prerequisite checker and tree visualiser |
-| `/dashboard` | Yes | Plan builder, workload estimator, requirements tracker |
+| `/dashboard` | Yes | Authenticated home with sidebar layout and plan builder |
 
 ---
 

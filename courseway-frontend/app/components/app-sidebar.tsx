@@ -23,7 +23,7 @@ const data = {
   navMain: [
     {
       title: "Module Planner",
-      url: "#",
+      url: "/module-planning",
       icon: <Calendar />,
     },
     {

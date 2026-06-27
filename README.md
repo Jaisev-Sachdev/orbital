@@ -2,7 +2,7 @@
 
 **AI-powered NUS academic degree planner**
 
-NUS Orbital 2026 · Apollo 11 · Team Courseway
+NUS Orbital 2026 · Apollo 11 · THE Team · Courseway
 
 > **Live:** Frontend at [courseway-frontend.vercel.app](https://courseway-frontend.vercel.app) · Backend at [courseway-backend-w5ua.onrender.com](https://courseway-backend-w5ua.onrender.com)
 

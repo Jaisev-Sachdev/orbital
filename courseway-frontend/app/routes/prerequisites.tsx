@@ -1,30 +1,44 @@
 /**
  * Prerequisites page  —  /prerequisites
  *
- * MS1 requirement: "Basic prerequisite display UI — show direct prereqs
- * as a list on the frontend"
- *
  * What it does:
- *   1. User types a module code (e.g. CS2040S)
- *   2. Hits the backend GET /modules/:code/prerequisites endpoint
- *   3. Shows the module title, the raw prerequisite text, and each
- *      prerequisite code as a clickable chip (which searches that code)
+ * 1. User types a module code (e.g. CS2040S)
+ * 2. Hits the backend GET /modules/:code/prerequisites/tree?depth=3 endpoint
+ * 3. Shows the module title and a nested prerequisite tree recursively resolving
+ * subtrees (AND/OR/N_OF logic).
  *
  * No auth required for this endpoint, so no ProtectedRoute needed.
  */
 
-import { useState, useCallback } from 'react'
-import { Search, ChevronRight, AlertCircle, BookOpen, Loader2, ArrowRight } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
+import { Search, ChevronRight, ChevronDown, AlertCircle, BookOpen, Loader2, ArrowRight, Waypoints } from 'lucide-react'
 import api from '~/lib/api'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import { AppSidebar } from "~/components/app-sidebar"
+import { SiteHeader } from "~/components/site-header"
+import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar"
+import { TooltipProvider } from "~/components/ui/tooltip"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface PrereqResult {
-  moduleCode: string
-  prerequisites: string[]
-  prerequisiteText: string
+interface TreeNode {
+  type: 'MODULE' | 'AND' | 'OR' | 'N_OF' | 'PROGRAMME' | 'OTHER'
+  code?: string
+  title?: string
+  text?: string
+  n?: number
+  children?: TreeNode[]
+  prerequisiteTree?: TreeNode | null
+}
+
+interface TreeResponse {
+  moduleCode?: string
+  prerequisiteTree?: TreeNode | null
+  prerequisiteText?: string
+  // Fallback in case the root itself is the TreeNode
+  type?: 'MODULE' | 'AND' | 'OR' | 'N_OF' | 'PROGRAMME' | 'OTHER'
+  children?: TreeNode[]
 }
 
 interface ModuleDetail {
@@ -34,15 +48,171 @@ interface ModuleDetail {
   description: string
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Module Node (collapsible) ────────────────────────────────────────────────
+
+/**
+ * Renders a single MODULE node.
+ *
+ * Collapsed by default. Click the chip to toggle the subtree.
+ * If `seen` already contains this code the subtree is not rendered at all
+ * (prevents the same prerequisite block from appearing dozens of times when
+ * multiple siblings share identical prerequisites).
+ */
+const ModuleNode = ({
+  node,
+  lookup,
+  seen,
+}: {
+  node: TreeNode
+  lookup: (code: string) => void
+  seen: Set<string>
+}) => {
+  const [expanded, setExpanded] = useState(false)
+
+  const code = node.code ?? ''
+  const hasSubtree = !!node.prerequisiteTree
+  // Don't recurse into a code we've already rendered higher up the tree
+  const alreadySeen = seen.has(code)
+  const canExpand = hasSubtree && !alreadySeen
+
+  // Pass a new set with this code added down to children
+  const childSeen = new Set(seen).add(code)
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Expand toggle — only shown when there is an unexpanded subtree */}
+        {canExpand ? (
+          <button
+            onClick={() => setExpanded(e => !e)}
+            className="module-chip group flex items-center gap-1.5"
+            title={expanded ? 'Collapse' : 'Expand prerequisites'}
+          >
+            {expanded
+              ? <ChevronDown className="h-3 w-3 opacity-60" />
+              : <ChevronRight className="h-3 w-3 opacity-60" />
+            }
+            <span>{code}</span>
+          </button>
+        ) : (
+          /* No subtree or already seen — plain chip that looks up the module */
+          <button
+            onClick={() => code && lookup(code)}
+            className="module-chip group"
+            title={`Look up ${code}`}
+          >
+            <span>{code}</span>
+            <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+        )}
+
+        <span className="text-sm" style={{ color: 'rgba(240,244,255,0.7)' }}>
+          {node.title ?? ''}
+        </span>
+
+        {/* Show a small hint when the subtree is hidden because we already rendered it */}
+        {alreadySeen && hasSubtree && (
+          <span className="text-xs" style={{ color: 'rgba(240,244,255,0.35)', fontStyle: 'italic' }}>
+            (see above)
+          </span>
+        )}
+      </div>
+
+      {/* Subtree — only when expanded and not already rendered */}
+      {canExpand && expanded && (
+        <div
+          className="ml-[1.15rem] pl-4 mt-2 mb-2"
+          style={{ borderLeft: '2px solid var(--cw-navy-border)' }}
+        >
+          <PrerequisiteTree node={node.prerequisiteTree!} lookup={lookup} seen={childSeen} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Recursive Tree Component ─────────────────────────────────────────────────
+
+const PrerequisiteTree = ({
+  node,
+  lookup,
+  seen = new Set<string>(),
+}: {
+  node: TreeNode
+  lookup: (code: string) => void
+  seen?: Set<string>
+}) => {
+  if (!node) return null
+
+  // 1. Module Node — delegate to collapsible component
+  if (node.type === 'MODULE') {
+    return <ModuleNode node={node} lookup={lookup} seen={seen} />
+  }
+
+  // 2. Logical Node (AND, OR, N_OF)
+  if (node.type === 'AND' || node.type === 'OR' || node.type === 'N_OF') {
+    const label =
+      node.type === 'AND' ? 'ALL OF' :
+      node.type === 'OR'  ? 'ANY OF' :
+      `${node.n} OF`
+
+    if (!node.children || node.children.length === 0) return null
+
+    return (
+      <div className="flex flex-col gap-3 mt-1 mb-2">
+        <div
+          className="text-xs font-bold px-2 py-1 rounded w-max tracking-wider flex items-center gap-1.5"
+          style={{
+            backgroundColor: 'rgba(240,244,255,0.05)',
+            color: 'rgba(240,244,255,0.6)',
+            border: '1px solid var(--cw-navy-border)'
+          }}
+        >
+          <Waypoints className="h-3 w-3" />
+          {label}
+        </div>
+        <div
+          className="ml-4 pl-4 flex flex-col gap-4"
+          style={{ borderLeft: '2px solid var(--cw-navy-border)' }}
+        >
+          {node.children.map((child, i) => (
+            <PrerequisiteTree key={i} node={child} lookup={lookup} seen={seen} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // 3. Programme / Other Conditions
+  return (
+    <div
+      className="text-sm pl-3 py-1 my-1"
+      style={{
+        borderLeft: '2px solid var(--cw-amber)',
+        color: 'rgba(240,244,255,0.6)',
+        fontStyle: 'italic'
+      }}
+    >
+      {node.text || node.title || 'Other Requirement'}
+    </div>
+  )
+}
+
+// ─── Main Page Component ──────────────────────────────────────────────────────
 
 export default function PrerequisitesPage() {
   const [query, setQuery] = useState('')
-  const [result, setResult] = useState<PrereqResult | null>(null)
+  const [treeResult, setTreeResult] = useState<TreeResponse | null>(null)
   const [moduleDetail, setModuleDetail] = useState<ModuleDetail | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [searchHistory, setSearchHistory] = useState<string[]>([])
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  // Check auth state for the sidebar so it displays the user profile if they are logged in
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem("authToken"))
+  }, [])
 
   const lookup = useCallback(async (code: string) => {
     const normalized = code.trim().toUpperCase()
@@ -50,18 +220,18 @@ export default function PrerequisitesPage() {
 
     setIsLoading(true)
     setError('')
-    setResult(null)
+    setTreeResult(null)
     setModuleDetail(null)
     setQuery(normalized)
 
     try {
-      // Fetch prereqs and module detail in parallel
-      const [prereqRes, moduleRes] = await Promise.all([
-        api.get(`/modules/${normalized}/prerequisites`),
+      // Fetch new tree endpoint and module detail in parallel
+      const [treeRes, moduleRes] = await Promise.all([
+        api.get(`/modules/${normalized}/prerequisites/tree?depth=3`),
         api.get(`/modules/${normalized}`),
       ])
 
-      setResult(prereqRes.data)
+      setTreeResult(treeRes.data)
       setModuleDetail(moduleRes.data.module)
 
       // Add to history (deduplicated, max 8)
@@ -74,7 +244,7 @@ export default function PrerequisitesPage() {
       if (status === 404) {
         setError(`Module "${normalized}" not found. Check the module code and try again.`)
       } else {
-        setError('Failed to fetch prerequisites. Make sure the backend is running.')
+        setError('Failed to fetch prerequisite tree. Make sure the backend is running.')
       }
     } finally {
       setIsLoading(false)
@@ -86,278 +256,291 @@ export default function PrerequisitesPage() {
     lookup(query)
   }
 
+  // ─── Data parsing logic ───
+  // Handle both { prerequisiteTree: {...} } and raw TreeNode formats safely
+  const rootNode = treeResult?.prerequisiteTree !== undefined
+    ? treeResult.prerequisiteTree
+    : (treeResult as TreeNode | null)
+
+  const hasPrerequisites = !!rootNode && (
+    rootNode.type === 'MODULE' ||
+    rootNode.type === 'PROGRAMME' ||
+    rootNode.type === 'OTHER' ||
+    (rootNode.children && rootNode.children.length > 0)
+  )
+
   return (
-    <main
-      className="min-h-screen"
-      style={{ backgroundColor: 'var(--cw-navy)', color: 'var(--cw-white)' }}
-    >
-      <div className="max-w-2xl mx-auto px-4 py-12">
+    <TooltipProvider>
+      <SidebarProvider
+        style={{
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties}
+      >
+        <AppSidebar variant="inset" isLoggedIn={isLoggedIn} />
 
-        {/* ── Header ── */}
-        <div className="mb-10">
-          <div className="flex items-center gap-2 mb-3">
-            <a
-              href="/"
-              className="text-sm"
-              style={{ color: 'var(--cw-teal)', textDecoration: 'none' }}
-            >
-              ← Back to Courseway
-            </a>
-          </div>
-          <h1 className="text-3xl font-bold mb-2">Prerequisite Checker</h1>
-          <p style={{ color: 'rgba(240,244,255,0.6)' }}>
-            Enter a module code to see what you need to take it first.
-          </p>
-        </div>
-
-        {/* ── Search bar ── */}
-        <form onSubmit={handleSubmit} className="flex gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
-              style={{ color: 'rgba(240,244,255,0.4)' }}
-            />
-            <Input
-              value={query}
-              onChange={e => setQuery(e.target.value.toUpperCase())}
-              placeholder="e.g. CS2040S, MA1521, IS1108"
-              className="pl-9 font-mono text-base"
-              style={{
-                backgroundColor: 'var(--cw-navy-light)',
-                borderColor: 'var(--cw-navy-border)',
-                color: 'var(--cw-white)',
-              }}
-              autoFocus
-            />
-          </div>
-          <Button
-            type="submit"
-            disabled={isLoading || !query.trim()}
-            style={{
-              backgroundColor: 'var(--cw-teal)',
-              color: 'var(--cw-navy)',
-              fontWeight: 600,
-            }}
+        <SidebarInset>
+          <SiteHeader />
+          <main
+            className="flex flex-1 flex-col min-h-screen"
+            style={{ backgroundColor: 'var(--cw-navy)', color: 'var(--cw-white)' }}
           >
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Check'}
-          </Button>
-        </form>
+            <div className="max-w-3xl mx-auto px-4 py-12 w-full">
 
-        {/* ── Recent searches ── */}
-        {searchHistory.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap mb-8">
-            <span className="text-xs" style={{ color: 'rgba(240,244,255,0.4)' }}>
-              Recent:
-            </span>
-            {searchHistory.map(code => (
-              <button
-                key={code}
-                onClick={() => lookup(code)}
-                className="module-chip text-xs cursor-pointer"
-                style={{ fontSize: '0.75rem', padding: '0.15rem 0.6rem' }}
-              >
-                {code}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* ── Loading ── */}
-        {isLoading && (
-          <div
-            className="rounded-xl p-8 flex items-center justify-center gap-3"
-            style={{ backgroundColor: 'var(--cw-navy-light)', border: '1px solid var(--cw-navy-border)' }}
-          >
-            <Loader2
-              className="h-5 w-5 animate-spin"
-              style={{ color: 'var(--cw-teal)' }}
-            />
-            <span style={{ color: 'rgba(240,244,255,0.6)' }}>Looking up {query}…</span>
-          </div>
-        )}
-
-        {/* ── Error ── */}
-        {error && !isLoading && (
-          <div
-            className="rounded-xl p-5 flex items-start gap-3"
-            style={{
-              backgroundColor: 'rgba(255,77,79,0.08)',
-              border: '1px solid rgba(255,77,79,0.25)',
-            }}
-          >
-            <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" style={{ color: '#FF4D4F' }} />
-            <p className="text-sm" style={{ color: 'rgba(240,244,255,0.8)' }}>{error}</p>
-          </div>
-        )}
-
-        {/* ── Results ── */}
-        {result && moduleDetail && !isLoading && (
-          <div className="space-y-4">
-
-            {/* Module header card */}
-            <div
-              className="rounded-xl p-5"
-              style={{
-                backgroundColor: 'var(--cw-navy-light)',
-                border: '1px solid var(--cw-navy-border)',
-              }}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <span
-                    className="module-code text-sm px-2 py-0.5 rounded"
-                    style={{
-                      backgroundColor: 'var(--cw-teal-glow)',
-                      color: 'var(--cw-teal)',
-                      border: '1px solid rgba(0,201,167,0.25)',
-                    }}
-                  >
-                    {moduleDetail.moduleCode}
-                  </span>
-                  <h2 className="text-xl font-semibold mt-2 mb-1">{moduleDetail.title}</h2>
-                  <p className="text-sm" style={{ color: 'rgba(240,244,255,0.5)' }}>
-                    {moduleDetail.credits} MCs
-                  </p>
-                </div>
-                <BookOpen
-                  className="h-5 w-5 shrink-0 mt-1"
-                  style={{ color: 'rgba(240,244,255,0.3)' }}
-                />
+              {/* ── Header ── */}
+              <div className="mb-10">
+                <h1 className="text-3xl font-bold mb-2">Prerequisite Checker</h1>
+                <p style={{ color: 'rgba(240,244,255,0.6)' }}>
+                  Enter a module code to see its full prerequisite tree. Click any module chip to expand its own prerequisites.
+                </p>
               </div>
-            </div>
 
-            {/* Prerequisites section */}
-            <div
-              className="rounded-xl p-5"
-              style={{
-                backgroundColor: 'var(--cw-navy-light)',
-                border: '1px solid var(--cw-navy-border)',
-              }}
-            >
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <ChevronRight
-                  className="h-4 w-4"
-                  style={{ color: 'var(--cw-teal)' }}
-                />
-                Prerequisites
-              </h3>
-
-              {result.prerequisites.length === 0 ? (
-                /* No prerequisites */
-                <div className="flex items-center gap-3 py-3">
-                  <div
-                    className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                    style={{ backgroundColor: 'var(--cw-teal-glow)', color: 'var(--cw-teal)' }}
-                  >
-                    ✓
-                  </div>
-                  <div>
-                    <p className="font-medium" style={{ color: 'var(--cw-teal)' }}>
-                      No prerequisites
-                    </p>
-                    <p className="text-sm" style={{ color: 'rgba(240,244,255,0.5)' }}>
-                      Anyone can take this module.
-                    </p>
-                  </div>
+              {/* ── Search bar ── */}
+              <form onSubmit={handleSubmit} className="flex gap-3 mb-6">
+                <div className="relative flex-1">
+                  <Search
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
+                    style={{ color: 'rgba(240,244,255,0.4)' }}
+                  />
+                  <Input
+                    value={query}
+                    onChange={e => setQuery(e.target.value.toUpperCase())}
+                    placeholder="e.g. CS2040S, MA1521, IS1108"
+                    className="pl-9 font-mono text-base"
+                    style={{
+                      backgroundColor: 'var(--cw-navy-light)',
+                      borderColor: 'var(--cw-navy-border)',
+                      color: 'var(--cw-white)',
+                    }}
+                    autoFocus
+                  />
                 </div>
-              ) : (
-                /* Prerequisite chips — each is clickable to look up that module */
-                <div className="space-y-3">
-                  <p className="text-sm mb-4" style={{ color: 'rgba(240,244,255,0.5)' }}>
-                    You need to complete the following before taking {result.moduleCode}:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {result.prerequisites.map(code => (
-                      <button
-                        key={code}
-                        onClick={() => lookup(code)}
-                        className="module-chip group"
-                        title={`Look up ${code}`}
-                      >
-                        <span>{code}</span>
-                        <ArrowRight
-                          className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Raw prerequisite text from NUSMods */}
-              {result.prerequisiteText && (
-                <div
-                  className="mt-5 pt-4 text-sm"
+                <Button
+                  type="submit"
+                  disabled={isLoading || !query.trim()}
                   style={{
-                    borderTop: '1px solid var(--cw-navy-border)',
-                    color: 'rgba(240,244,255,0.45)',
+                    backgroundColor: 'var(--cw-teal)',
+                    color: 'var(--cw-navy)',
+                    fontWeight: 600,
                   }}
                 >
-                  <span className="font-medium" style={{ color: 'rgba(240,244,255,0.6)' }}>
-                    NUSMods condition:{' '}
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Check'}
+                </Button>
+              </form>
+
+              {/* ── Recent searches ── */}
+              {searchHistory.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap mb-8">
+                  <span className="text-xs" style={{ color: 'rgba(240,244,255,0.4)' }}>
+                    Recent:
                   </span>
-                  {result.prerequisiteText}
+                  {searchHistory.map(code => (
+                    <button
+                      key={code}
+                      onClick={() => lookup(code)}
+                      className="module-chip text-xs cursor-pointer"
+                      style={{ fontSize: '0.75rem', padding: '0.15rem 0.6rem' }}
+                    >
+                      {code}
+                    </button>
+                  ))}
                 </div>
               )}
+
+              {/* ── Loading ── */}
+              {isLoading && (
+                <div
+                  className="rounded-xl p-8 flex items-center justify-center gap-3"
+                  style={{ backgroundColor: 'var(--cw-navy-light)', border: '1px solid var(--cw-navy-border)' }}
+                >
+                  <Loader2
+                    className="h-5 w-5 animate-spin"
+                    style={{ color: 'var(--cw-teal)' }}
+                  />
+                  <span style={{ color: 'rgba(240,244,255,0.6)' }}>Mapping tree for {query}…</span>
+                </div>
+              )}
+
+              {/* ── Error ── */}
+              {error && !isLoading && (
+                <div
+                  className="rounded-xl p-5 flex items-start gap-3"
+                  style={{
+                    backgroundColor: 'rgba(255,77,79,0.08)',
+                    border: '1px solid rgba(255,77,79,0.25)',
+                  }}
+                >
+                  <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" style={{ color: '#FF4D4F' }} />
+                  <p className="text-sm" style={{ color: 'rgba(240,244,255,0.8)' }}>{error}</p>
+                </div>
+              )}
+
+              {/* ── Results ── */}
+              {treeResult && moduleDetail && !isLoading && (
+                <div className="space-y-4">
+
+                  {/* Module header card */}
+                  <div
+                    className="rounded-xl p-5"
+                    style={{
+                      backgroundColor: 'var(--cw-navy-light)',
+                      border: '1px solid var(--cw-navy-border)',
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <span
+                          className="module-code text-sm px-2 py-0.5 rounded"
+                          style={{
+                            backgroundColor: 'var(--cw-teal-glow)',
+                            color: 'var(--cw-teal)',
+                            border: '1px solid rgba(0,201,167,0.25)',
+                          }}
+                        >
+                          {moduleDetail.moduleCode}
+                        </span>
+                        <h2 className="text-xl font-semibold mt-2 mb-1">{moduleDetail.title}</h2>
+                        <p className="text-sm" style={{ color: 'rgba(240,244,255,0.5)' }}>
+                          {moduleDetail.credits} MCs
+                        </p>
+                      </div>
+                      <BookOpen
+                        className="h-5 w-5 shrink-0 mt-1"
+                        style={{ color: 'rgba(240,244,255,0.3)' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Prerequisites Tree Section */}
+                  <div
+                    className="rounded-xl p-5"
+                    style={{
+                      backgroundColor: 'var(--cw-navy-light)',
+                      border: '1px solid var(--cw-navy-border)',
+                    }}
+                  >
+                    <h3 className="font-semibold mb-6 flex items-center gap-2">
+                      <ChevronRight
+                        className="h-4 w-4"
+                        style={{ color: 'var(--cw-teal)' }}
+                      />
+                      Prerequisite Tree
+                      <span className="text-xs font-normal ml-1" style={{ color: 'rgba(240,244,255,0.4)' }}>
+                        — click a module chip to expand its prerequisites
+                      </span>
+                    </h3>
+
+                    {!hasPrerequisites || !rootNode ? (
+                      /* No prerequisites */
+                      <div className="flex items-center gap-3 py-3">
+                        <div
+                          className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                          style={{ backgroundColor: 'var(--cw-teal-glow)', color: 'var(--cw-teal)' }}
+                        >
+                          ✓
+                        </div>
+                        <div>
+                          <p className="font-medium" style={{ color: 'var(--cw-teal)' }}>
+                            No prerequisites
+                          </p>
+                          <p className="text-sm" style={{ color: 'rgba(240,244,255,0.5)' }}>
+                            Anyone can take this module.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Tree Render */
+                      <div className="text-sm">
+                        <p className="mb-4" style={{ color: 'rgba(240,244,255,0.5)' }}>
+                          You must satisfy the following conditions before taking {moduleDetail.moduleCode}:
+                        </p>
+                        <div className="p-2">
+                          <PrerequisiteTree
+                            node={rootNode}
+                            lookup={lookup}
+                            seen={new Set([moduleDetail.moduleCode])}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Raw prerequisite text from NUSMods (Fallback/Extra Info) */}
+                    {treeResult.prerequisiteText && (
+                      <div
+                        className="mt-6 pt-4 text-sm"
+                        style={{
+                          borderTop: '1px solid var(--cw-navy-border)',
+                          color: 'rgba(240,244,255,0.45)',
+                        }}
+                      >
+                        <span className="font-medium" style={{ color: 'rgba(240,244,255,0.6)' }}>
+                          Raw condition text:{' '}
+                        </span>
+                        {treeResult.prerequisiteText}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick actions */}
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setTreeResult(null)
+                        setModuleDetail(null)
+                        setError('')
+                        setQuery('')
+                      }}
+                      style={{
+                        borderColor: 'var(--cw-navy-border)',
+                        color: 'rgba(240,244,255,0.7)',
+                        backgroundColor: 'transparent',
+                      }}
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => window.location.href = '/recommendations'}
+                      style={{
+                        backgroundColor: 'var(--cw-teal)',
+                        color: 'var(--cw-navy)',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Get AI Recommendations →
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Empty state (first load) ── */}
+              {!treeResult && !error && !isLoading && (
+                <div
+                  className="rounded-xl p-10 text-center"
+                  style={{
+                    backgroundColor: 'var(--cw-navy-light)',
+                    border: '1px dashed var(--cw-navy-border)',
+                  }}
+                >
+                  <Search
+                    className="h-8 w-8 mx-auto mb-3"
+                    style={{ color: 'rgba(240,244,255,0.2)' }}
+                  />
+                  <p style={{ color: 'rgba(240,244,255,0.4)' }}>
+                    Enter a module code above to map its requirement tree.
+                  </p>
+                  <p className="text-sm mt-2" style={{ color: 'rgba(240,244,255,0.25)' }}>
+                    Try CS2040S, CS2030S, or MA1521
+                  </p>
+                </div>
+              )}
+
             </div>
-
-            {/* Quick actions */}
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setResult(null)
-                  setModuleDetail(null)
-                  setError('')
-                  setQuery('')
-                }}
-                style={{
-                  borderColor: 'var(--cw-navy-border)',
-                  color: 'rgba(240,244,255,0.7)',
-                  backgroundColor: 'transparent',
-                }}
-              >
-                Clear
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => window.location.href = '/recommendations'}
-                style={{
-                  backgroundColor: 'var(--cw-teal)',
-                  color: 'var(--cw-navy)',
-                  fontWeight: 600,
-                }}
-              >
-                Get AI Recommendations →
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Empty state (first load) ── */}
-        {!result && !error && !isLoading && (
-          <div
-            className="rounded-xl p-10 text-center"
-            style={{
-              backgroundColor: 'var(--cw-navy-light)',
-              border: '1px dashed var(--cw-navy-border)',
-            }}
-          >
-            <Search
-              className="h-8 w-8 mx-auto mb-3"
-              style={{ color: 'rgba(240,244,255,0.2)' }}
-            />
-            <p style={{ color: 'rgba(240,244,255,0.4)' }}>
-              Enter a module code above to check its prerequisites.
-            </p>
-            <p className="text-sm mt-2" style={{ color: 'rgba(240,244,255,0.25)' }}>
-              Try CS2040S, CS2030S, or MA1521
-            </p>
-          </div>
-        )}
-
-      </div>
-    </main>
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   )
 }

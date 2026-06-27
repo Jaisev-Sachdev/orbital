@@ -15,7 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar"
-import { Calendar, Network, DatabaseIcon, Sparkles, CommandIcon, Users } from "lucide-react"
+import { Calendar, Network, DatabaseIcon, Sparkles, Users } from "lucide-react"
 import api from "~/lib/api"
 
 // Removed the hardcoded user data from here
@@ -95,8 +95,7 @@ export function AppSidebar({
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
               <a href="/">
-                <CommandIcon className="size-5!" />
-                <span className="text-base font-semibold">Courseway</span>
+                <img src="/logo.png" alt="Courseway" className="h-9 w-auto" />
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

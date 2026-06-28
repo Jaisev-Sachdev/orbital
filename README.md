@@ -352,29 +352,6 @@ All user input is normalised (trimmed, uppercased for module codes, lowercased f
 
 ---
 
-## Code Comments
-
-All non-obvious logic is documented with inline comments:
-
-```typescript
-// GET /modules/:code/prerequisites/tree?depth=3
-// Registered after /:code/prerequisites — Express matches on the full path,
-// so /tree is never captured by the shorter route regardless of order.
-router.get('/:code/prerequisites/tree', async (req, res) => { ... });
-```
-
-```typescript
-// Extract prefixes from completed modules to infer relevant departments
-// e.g. ["CS1101S", "MA1521"] -> ["CS", "MA"]
-// This focuses the AI context on relevant modules rather than all 7139
-const completedPrefixes = [...new Set(
-  completedCodes.map(code => code.match(/^[A-Z]+/)?.[0] ?? '')
-  .filter(p => p.length > 0)
-)];
-```
-
----
-
 ## Backend Setup
 
 ### Prerequisites

@@ -705,17 +705,6 @@ All API endpoints tested via Thunder Client during development:
 - Supertest: integration tests for all API endpoints against a test database
 - React Testing Library: component and user flow tests
 
----
-
-## User Testing
-
-We recruited 5 NUS students (Year 1-2, School of Computing) and tested the following tasks before MS2 submission:
-1. Register and complete onboarding from scratch
-2. Assess whether AI recommendations seem relevant to their goals
-3. Build a 2-year plan and check workload flags
-4. Use the prerequisite tree to trace a module path
-
-Results and structured findings will be documented in the MS2 project log on Skylab.
 
 ---
 
@@ -745,7 +734,6 @@ Results and structured findings will be documented in the MS2 project log on Sky
 - [x] DELETE /profile/modules endpoint
 - [x] hasProfile flag on GET /profile: 200 instead of 404 for new users
 - [x] Deployment: backend on Render, frontend on Vercel, production DB migrated and seeded
-- [x] User testing with 5 NUS students
 - [x] GitHub Actions CI pipeline
 - [x] README updated for MS2
 

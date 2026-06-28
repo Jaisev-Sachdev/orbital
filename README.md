@@ -123,7 +123,7 @@ For each semester in a plan, the backend computes total MCs, total weekly hours 
 
 A hand-written recursive descent parser converts raw NUSMods prerequisite strings into an AST with node types `MODULE`, `AND`, `OR`, `N_OF`, `PROGRAMME`, and `OTHER`. The tree endpoint recursively resolves each MODULE node up to a configurable depth (default 3, max 5), enriching each node with its title and its own prerequisite subtree. A per-request module cache avoids redundant DB queries and a visited set guards against circular prerequisites.
 
-![Prerequisite Tree](docs/screenshots/prereq-tree.png)
+![Prerequisite Tree](docs/screenshots/tree.png)
 
 ---
 

@@ -637,13 +637,6 @@ Response: { "recommendations": [{ moduleCode, title, reason }] }
 - Every change goes through a pull request.
 - GitHub Copilot reviews every PR automatically.
 
-### Copilot Code Review
-
-![Copilot Review](docs/screenshots/copilot-review.png)
-
-Every PR is reviewed by GitHub Copilot. Issues are triaged by severity:
-- **High** — fixed before merge (P2025 error handling, depth=0 edge case, visited set for circular prereqs, title: null for missing modules)
-- **Medium** — tracked as GitHub Issues
 
 ### CI/CD
 

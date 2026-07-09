@@ -88,7 +88,7 @@ Respond in JSON only. No explanation outside the JSON. Use this exact format:
   try {
     // 4. Call the Anthropic API
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }]
     });

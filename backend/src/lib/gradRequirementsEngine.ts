@@ -41,21 +41,6 @@ export interface ExistingSlot {
 }
 
 // ---- Category classification (MC-bucket heuristic) --------------------
-//
-// The gradRequirements.json schema only tags a handful of categories with an
-// explicit `modules` list (module_list categories). The remaining categories
-// (`mc_total`) — common curriculum, breadth & depth, unrestricted electives —
-// have no per-module tagging in NUSMods data (no GE-pillar or UE flag on the
-// Module model), so we classify by moduleCode prefix as a heuristic:
-//   - GE-prefixed codes (GEA/GEC/GEN/GEQ/GER/GES/GET) + a short list of known
-//     common-curriculum codes (ES2660, IS1108) -> common curriculum
-//   - Codes appearing in a module_list category from gradRequirements -> that
-//     category (foundation / math & science / industry exp / focus area)
-//   - CS/IFS/CP-prefixed codes not already claimed by foundation -> breadth & depth
-//   - Everything else -> unrestricted electives (by elimination)
-//
-// This is an approximation, not a NUS-verified tagging system — it's noted
-// as such in the API response.
 
 const GE_PREFIX_RE = /^GE[A-Z]/;
 const COMMON_CURRICULUM_EXTRA_CODES = new Set(['ES2660', 'IS1108']);
@@ -93,7 +78,6 @@ export function computeRequirementsProgress(
   const plannedCodes = new Set(plannedModules.map(m => m.moduleCode));
   const totalMCsPlanned = plannedModules.reduce((sum, m) => sum + (m.credits ?? 0), 0);
 
-  // Bucket every planned module by MC-heuristic classification once.
   const bucketMCs: Record<ClassificationBucket, number> = {
     foundation: 0,
     math_science: 0,
@@ -161,12 +145,6 @@ export function computeRequirementsProgress(
 }
 
 // ---- Four-year recommendation ------------------------------------------
-//
-// Only schedules concrete module_list gaps (foundation, math & science,
-// industry experience, focus area primaries) — the mc_total categories
-// (common curriculum / breadth & depth / unrestricted electives) don't map
-// to specific required modules, so those are surfaced as an MC gap for the
-// student to fill with electives of their choice, not auto-scheduled.
 
 const MAX_YEARS = 4;
 const SEMESTERS_PER_YEAR = 2;
@@ -179,8 +157,6 @@ function semesterKey(year: number, semester: number): string {
 function nextSemester(year: number, semester: number): { year: number; semester: number } {
   return semester >= SEMESTERS_PER_YEAR ? { year: year + 1, semester: 1 } : { year, semester: semester + 1 };
 }
-
-/** Collects moduleCodes still needed to satisfy module_list categories, in priority order. */
 function collectMissingRequiredCodes(gradRequirements: GradRequirements, plannedCodes: Set<string>): string[] {
   const missing: string[] = [];
   const seen = new Set<string>();
@@ -222,9 +198,8 @@ export function buildFourYearPlan(
   const candidateMap = new Map(candidateModules.map(m => [m.moduleCode, m]));
 
   const missingCodes = collectMissingRequiredCodes(gradRequirements, plannedCodes)
-    .filter(code => candidateMap.has(code)); // only schedule modules we actually have data for
+    .filter(code => candidateMap.has(code));
 
-  // Determine the next open semester slot after whatever is already planned.
   let startYear = 1;
   let startSemester = 1;
   if (existingSlots.length > 0) {
@@ -256,7 +231,6 @@ export function buildFourYearPlan(
   const remaining = new Set(missingCodes);
 
   if (upcomingSlots.length === 0) {
-    // Already at/past year 4 — nothing left to schedule.
     return {
       recommendedPlan: {},
       unscheduled: [...remaining].map(code => ({
@@ -282,7 +256,7 @@ export function buildFourYearPlan(
 
       const tree = parsePrerequisite(mod.prerequisite);
       const evalResult = evaluatePrerequisite(tree, known);
-      if (evalResult === false) continue; // prereqs not met yet — try again in a later semester
+      if (evalResult === false) continue; 
 
       if (!recommendedPlan[key]) recommendedPlan[key] = [];
       recommendedPlan[key].push({ moduleCode: mod.moduleCode, title: mod.title, credits: mod.credits });

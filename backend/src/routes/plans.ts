@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import prisma from '../lib/prisma';
 import requireAuth, { AuthRequest } from '../middleware/requireAuth';
 import gradRequirements from '../config/gradRequirements.json';
+import { computeRequirementsProgress, buildFourYearPlan } from '../lib/gradRequirementsEngine';
 
 const router = Router();
 
@@ -23,7 +24,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   res.status(201).json({ message: 'Plan created', plan });
 });
 
-// GET /plans 
+// GET /plans — get all plans for logged in user
 router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const plans = await prisma.plan.findMany({
     where: { userId: req.userId! },
@@ -265,7 +266,7 @@ router.post('/:id/slots/bulk', requireAuth, async (req: AuthRequest, res: Respon
   res.status(201).json({ message: `${added.count} module(s) added`, count: added.count });
 });
 
-// GET /plans/:id/workload: per-semester workload breakdown
+// GET /plans/:id/workload — per-semester workload breakdown and overload flags
 router.get('/:id/workload', requireAuth, async (req: AuthRequest, res: Response) => {
   const plan = await prisma.plan.findFirst({
     where: { id: String(req.params.id), userId: req.userId! }
@@ -310,12 +311,10 @@ router.get('/:id/workload', requireAuth, async (req: AuthRequest, res: Response)
 
     for (const slot of semSlots) {
       const mod = moduleMap.get(slot.moduleCode);
-      // Always count MCs regardless of workload data availability
       totalMCs += mod?.credits ?? 0;
 
       const w = mod?.workload ?? [];
       if (w.length < 5) {
-        // Skip only the hour breakdown for modules with incomplete workload data
         incompleteData = true;
         continue;
       }
@@ -356,7 +355,7 @@ router.get('/:id/workload', requireAuth, async (req: AuthRequest, res: Response)
   res.json({ workload });
 });
 
-// GET /plans/:id/requirements — graduation requirements progress
+// GET /plans/:id/requirements — graduation requirements progress + 4-year recommendation
 router.get('/:id/requirements', requireAuth, async (req: AuthRequest, res: Response) => {
   const plan = await prisma.plan.findFirst({
     where: { id: String(req.params.id), userId: req.userId! }
@@ -376,48 +375,40 @@ router.get('/:id/requirements', requireAuth, async (req: AuthRequest, res: Respo
     where: { moduleCode: { in: moduleCodes } }
   });
 
-   const planModuleCodes = new Set(modules.map(m => m.moduleCode));
-   const totalMCs = modules.reduce((sum, m) => sum + (m.credits ?? 0), 0);
+  const plannedModules = modules.map(m => ({ moduleCode: m.moduleCode, credits: m.credits ?? 0 }));
 
-  const categories = gradRequirements.categories.map((cat: any) => {
-    if (cat.type === 'module_list') {
-      const taken = cat.modules.filter((code: string) => planModuleCodes.has(code));
-      const missing = cat.modules.filter((code: string) => !planModuleCodes.has(code));
-      const minRequired = cat.minRequired ?? cat.modules.length;
+  const progress = computeRequirementsProgress(gradRequirements, plannedModules);
 
-      return {
-        key: cat.key,
-        label: cat.label,
-        type: cat.type,
-        required: cat.modules,
-        taken,
-        missing,
-        minRequired,
-        satisfied: taken.length >= minRequired,
-        notes: cat.notes ?? null
-      };
-    }
+  // Fetch full module data (prerequisite, semesters offered) for every module
+  // referenced by a module_list requirement, so the 4-year planner has what
+  // it needs to check eligibility and semester availability.
+  const allModuleListCodes = [...new Set(
+    gradRequirements.categories
+      .filter((cat: any) => cat.type === 'module_list')
+      .flatMap((cat: any) => cat.modules as string[])
+  )];
 
-    if (cat.type === 'mc_total') {
-      return {
-        key: cat.key,
-        label: cat.label,
-        type: cat.type,
-        mcsRequired: cat.mcsRequired,
-        satisfied: null, // cannot be determined precisely without per-module GE/UE tagging
-        notes: cat.notes ?? 'Approximate — based on overall MC total, not category-specific tagging.'
-      };
-    }
-
-    return { key: cat.key, label: cat.label, type: cat.type };
+  const candidateModuleRecords = await prisma.module.findMany({
+    where: { moduleCode: { in: allModuleListCodes } }
   });
+  const candidateModules = candidateModuleRecords.map(m => ({
+    moduleCode: m.moduleCode,
+    title: m.title,
+    credits: m.credits ?? 0,
+    prerequisite: m.prerequisite,
+    semesters: m.semesters ?? []
+  }));
+
+  const fourYearRecommendation = buildFourYearPlan(
+    gradRequirements,
+    slots.map(s => ({ year: s.year, semester: s.semester, moduleCode: s.moduleCode })),
+    plannedModules,
+    candidateModules
+  );
 
   res.json({
-    programme: gradRequirements.programme,
-    focusArea: gradRequirements.focusArea,
-    totalMCsRequired: gradRequirements.totalMCsRequired,
-    totalMCsPlanned: totalMCs,
-    categories
+    ...progress,
+    fourYearRecommendation
   });
 });
 

@@ -73,13 +73,27 @@ export type ClassificationBucket =
   | 'breadth_and_depth'
   | 'unclassified';
 
+// Categories whose module_list is explicitly documented as "counted within
+// the Breadth & Depth total" in gradRequirements.json (industry experience,
+// focus area primaries). Their codes don't all share a common prefix — e.g.
+// industry_experience includes IS4010 and ETP3201L/ETP3205 alongside the
+// CP-prefixed options — so prefix matching alone would misclassify them as
+// unrestricted electives. Check membership explicitly instead.
+const BREADTH_DEPTH_CATEGORY_KEYS = ['industry_experience', 'focus_primary_ai'];
+
 export function classifyModule(code: string, gradRequirements: GradRequirements): ClassificationBucket {
   const foundationCodes = getModuleListCodes(gradRequirements, 'core_foundation_and_intermediate');
   const mathScienceCodes = getModuleListCodes(gradRequirements, 'math_science');
+  const breadthDepthEnumeratedCodes = new Set(
+    BREADTH_DEPTH_CATEGORY_KEYS.flatMap(key => [...getModuleListCodes(gradRequirements, key)])
+  );
 
   if (foundationCodes.has(code)) return 'foundation';
   if (mathScienceCodes.has(code)) return 'math_science';
+  if (breadthDepthEnumeratedCodes.has(code)) return 'breadth_and_depth';
   if (GE_PREFIX_RE.test(code) || COMMON_CURRICULUM_EXTRA_CODES.has(code)) return 'common_curriculum';
+  // Fallback for breadth & depth electives not explicitly enumerated above
+  // (e.g. other CS/IFS/CP-coded courses taken as general breadth electives).
   if (BREADTH_DEPTH_PREFIX_RE.test(code)) return 'breadth_and_depth';
   return 'unclassified';
 }
@@ -193,6 +207,12 @@ function collectMissingRequiredCodes(gradRequirements: GradRequirements, planned
     const stillNeeded = Math.max(0, minRequired - taken.length);
     if (stillNeeded === 0) continue;
 
+    // NOTE: picks the first `stillNeeded` missing codes in the JSON's listed
+    // order — not by level or any other sub-requirement. For focus_primary_ai
+    // this happens to include a Level-4000+ module today only because of how
+    // the list in gradRequirements.json is ordered (CS4243 is 3rd), which
+    // satisfies the "at least one Level-4000+" rule by coincidence, not by
+    // enforcement. Reordering that JSON list could silently violate it.
     const candidates = modules.filter(code => !plannedCodes.has(code)).slice(0, stillNeeded);
     for (const code of candidates) {
       if (!seen.has(code)) {
@@ -283,6 +303,9 @@ export function buildFourYearPlan(
       if (newCount >= cap) break;
 
       const mod = candidateMap.get(code)!;
+      // An empty `semesters` array is treated as "offered every semester" —
+      // a permissive fallback for modules with incomplete NUSMods sync data,
+      // rather than permanently excluding them from the recommendation.
       const offeredThisSem = mod.semesters.length === 0 || mod.semesters.includes(semester);
       if (!offeredThisSem) continue;
 
@@ -312,11 +335,11 @@ export function buildFourYearPlan(
     };
   });
 
+  const progressCategories = computeRequirementsProgress(gradRequirements, plannedModules).categories;
   const mcGapsToFillWithElectives = gradRequirements.categories
     .filter(cat => cat.type === 'mc_total')
     .map(cat => {
-      const progress = computeRequirementsProgress(gradRequirements, plannedModules)
-        .categories.find(c => c.key === cat.key) as any;
+      const progress = progressCategories.find(c => c.key === cat.key) as any;
       const mcsRemaining = Math.max(0, (cat.mcsRequired ?? 0) - (progress?.mcsPlanned ?? 0));
       return { key: cat.key, label: cat.label, mcsRemaining };
     })

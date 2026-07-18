@@ -41,21 +41,6 @@ export interface ExistingSlot {
 }
 
 // ---- Category classification (MC-bucket heuristic) --------------------
-//
-// The gradRequirements.json schema only tags a handful of categories with an
-// explicit `modules` list (module_list categories). The remaining categories
-// (`mc_total`) — common curriculum, breadth & depth, unrestricted electives —
-// have no per-module tagging in NUSMods data (no GE-pillar or UE flag on the
-// Module model), so we classify by moduleCode prefix as a heuristic:
-//   - GE-prefixed codes (GEA/GEC/GEN/GEQ/GER/GES/GET) + a short list of known
-//     common-curriculum codes (ES2660, IS1108) -> common curriculum
-//   - Codes appearing in a module_list category from gradRequirements -> that
-//     category (foundation / math & science / industry exp / focus area)
-//   - CS/IFS/CP-prefixed codes not already claimed by foundation -> breadth & depth
-//   - Everything else -> unrestricted electives (by elimination)
-//
-// This is an approximation, not a NUS-verified tagging system — it's noted
-// as such in the API response.
 
 const GE_PREFIX_RE = /^GE[A-Z]/;
 const COMMON_CURRICULUM_EXTRA_CODES = new Set(['ES2660', 'IS1108']);
@@ -73,12 +58,6 @@ export type ClassificationBucket =
   | 'breadth_and_depth'
   | 'unclassified';
 
-// Categories whose module_list is explicitly documented as "counted within
-// the Breadth & Depth total" in gradRequirements.json (industry experience,
-// focus area primaries). Their codes don't all share a common prefix — e.g.
-// industry_experience includes IS4010 and ETP3201L/ETP3205 alongside the
-// CP-prefixed options — so prefix matching alone would misclassify them as
-// unrestricted electives. Check membership explicitly instead.
 const BREADTH_DEPTH_CATEGORY_KEYS = ['industry_experience', 'focus_primary_ai'];
 
 export function classifyModule(code: string, gradRequirements: GradRequirements): ClassificationBucket {
@@ -92,8 +71,6 @@ export function classifyModule(code: string, gradRequirements: GradRequirements)
   if (mathScienceCodes.has(code)) return 'math_science';
   if (breadthDepthEnumeratedCodes.has(code)) return 'breadth_and_depth';
   if (GE_PREFIX_RE.test(code) || COMMON_CURRICULUM_EXTRA_CODES.has(code)) return 'common_curriculum';
-  // Fallback for breadth & depth electives not explicitly enumerated above
-  // (e.g. other CS/IFS/CP-coded courses taken as general breadth electives).
   if (BREADTH_DEPTH_PREFIX_RE.test(code)) return 'breadth_and_depth';
   return 'unclassified';
 }
@@ -175,12 +152,6 @@ export function computeRequirementsProgress(
 }
 
 // ---- Four-year recommendation ------------------------------------------
-//
-// Only schedules concrete module_list gaps (foundation, math & science,
-// industry experience, focus area primaries) — the mc_total categories
-// (common curriculum / breadth & depth / unrestricted electives) don't map
-// to specific required modules, so those are surfaced as an MC gap for the
-// student to fill with electives of their choice, not auto-scheduled.
 
 const MAX_YEARS = 4;
 const SEMESTERS_PER_YEAR = 2;
@@ -194,7 +165,6 @@ function nextSemester(year: number, semester: number): { year: number; semester:
   return semester >= SEMESTERS_PER_YEAR ? { year: year + 1, semester: 1 } : { year, semester: semester + 1 };
 }
 
-/** Collects moduleCodes still needed to satisfy module_list categories, in priority order. */
 function collectMissingRequiredCodes(gradRequirements: GradRequirements, plannedCodes: Set<string>): string[] {
   const missing: string[] = [];
   const seen = new Set<string>();
@@ -207,12 +177,7 @@ function collectMissingRequiredCodes(gradRequirements: GradRequirements, planned
     const stillNeeded = Math.max(0, minRequired - taken.length);
     if (stillNeeded === 0) continue;
 
-    // NOTE: picks the first `stillNeeded` missing codes in the JSON's listed
-    // order — not by level or any other sub-requirement. For focus_primary_ai
-    // this happens to include a Level-4000+ module today only because of how
-    // the list in gradRequirements.json is ordered (CS4243 is 3rd), which
-    // satisfies the "at least one Level-4000+" rule by coincidence, not by
-    // enforcement. Reordering that JSON list could silently violate it.
+    // picks the first `stillNeeded` missing codes in the JSON's listed order
     const candidates = modules.filter(code => !plannedCodes.has(code)).slice(0, stillNeeded);
     for (const code of candidates) {
       if (!seen.has(code)) {
@@ -255,7 +220,6 @@ export function buildFourYearPlan(
     ({ year: startYear, semester: startSemester } = nextSemester(latest.year, latest.semester));
   }
 
-  // Build the list of upcoming (year, semester) slots up to year 4 sem 2.
   const upcomingSlots: { year: number; semester: number }[] = [];
   {
     let { year, semester } = { year: startYear, semester: startSemester };
@@ -276,7 +240,6 @@ export function buildFourYearPlan(
   const remaining = new Set(missingCodes);
 
   if (upcomingSlots.length === 0) {
-    // Already at/past year 4 — nothing left to schedule.
     return {
       recommendedPlan: {},
       unscheduled: [...remaining].map(code => ({
@@ -293,25 +256,19 @@ export function buildFourYearPlan(
     let newCount = 0;
     const cap = Math.max(0, MAX_NEW_MODULES_PER_SEMESTER - (existingCountBySlot.get(key) ?? 0));
 
-    // Modules scheduled within THIS semester must not be usable as prerequisites
-    // for other modules scheduled in the same semester (you can't have completed
-    // a module you're concurrently taking). Only merge into `known` once the
-    // whole semester's pass is done.
+    // Modules scheduled within THIS semester must not be usable as prerequisites for other modules scheduled in the same semester
     const scheduledThisSemester: string[] = [];
 
     for (const code of [...remaining]) {
       if (newCount >= cap) break;
 
       const mod = candidateMap.get(code)!;
-      // An empty `semesters` array is treated as "offered every semester" —
-      // a permissive fallback for modules with incomplete NUSMods sync data,
-      // rather than permanently excluding them from the recommendation.
       const offeredThisSem = mod.semesters.length === 0 || mod.semesters.includes(semester);
       if (!offeredThisSem) continue;
 
       const tree = parsePrerequisite(mod.prerequisite);
       const evalResult = evaluatePrerequisite(tree, known);
-      if (evalResult === false) continue; // prereqs not met yet — try again in a later semester
+      if (evalResult === false) continue; 
 
       if (!recommendedPlan[key]) recommendedPlan[key] = [];
       recommendedPlan[key].push({ moduleCode: mod.moduleCode, title: mod.title, credits: mod.credits });

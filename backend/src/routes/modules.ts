@@ -72,7 +72,7 @@ router.get('/:code/prerequisites/tree', async (req: Request, res: Response) => {
     | { type: 'OR'; children: ResolvedNode[] }
     | { type: 'N_OF'; n: number; children: ResolvedNode[] }
     | { type: 'PROGRAMME'; programmes: string[] }
-    | { type: 'OTHER'; text: string };
+    | { type: 'OTHER'; text: string; label: string };
 
   const moduleCache = new Map<string, { moduleCode: string; title: string; prerequisite: string | null } | null>();
 

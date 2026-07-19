@@ -20,7 +20,9 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { AuthProvider } from "~/context/AuthContext";
 
-export const links: Route.LinksFunction = () => [];
+export const links: Route.LinksFunction = () => [
+  { rel: "icon", type: "image/png", href: "/favicon.png" },
+];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (

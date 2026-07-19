@@ -4,7 +4,7 @@ export type PrereqNode =
   | { type: 'OR'; children: PrereqNode[] }
   | { type: 'N_OF'; n: number; children: PrereqNode[] }
   | { type: 'PROGRAMME'; programmes: string[] }
-  | { type: 'OTHER'; text: string; label: string };
+  | { type: 'OTHER'; text: string };
 
 function isModuleCode(s: string): boolean {
   return /^[A-Z]{2,4}\d{4}[A-Z]*$/.test(s.trim());
@@ -20,31 +20,8 @@ function cleanText(raw: string): string {
     .trim();
 }
 
-const OTHER_LABEL_MAX_LENGTH = 48;
 
-/**
- * Produces a short, display-friendly label for an OTHER-type prerequisite
- * clause (grade/level conditions the parser can't structurally resolve into
- * MODULE/AND/OR/N_OF nodes — e.g. "must have completed GCE A-Level H2
- * Mathematics or equivalent at a grade of..."). Compact UI contexts (graph
- * nodes, chips) were previously stuck rendering the full `text` and
- * truncating it blindly mid-word, since no short form existed. The full
- * clause remains available on `text` for a tooltip or expanded view.
- */
-function summarizeOtherText(text: string): string {
-  const trimmed = text.trim();
-  if (trimmed.length <= OTHER_LABEL_MAX_LENGTH) return trimmed;
-
-  const truncated = trimmed.slice(0, OTHER_LABEL_MAX_LENGTH);
-  const lastSpace = truncated.lastIndexOf(' ');
-  // Only break on a word boundary if it doesn't cut off too much of the
-  // available budget — otherwise just hard-truncate.
-  const safe = lastSpace > 20 ? truncated.slice(0, lastSpace) : truncated;
-  return `${safe.trim()}…`;
-}
-
-
-const PROGRAMME_PLACEHOLDER_PREFIX = '␀PROGRAMME_';
+const PROGRAMME_PLACEHOLDER_PREFIX = '\u0000PROGRAMME_';
 
 function extractProgrammeClauses(text: string): { text: string; programmes: Map<string, string[]> } {
   const programmes = new Map<string, string[]>();
@@ -54,7 +31,7 @@ function extractProgrammeClauses(text: string): { text: string; programmes: Map<
   const PROGRAMME_CLAUSE_RE = /must be undertaking \d+ of\s+(.+?)(?=\s*(?:AND|OR)\s*(?:must|either|\()|$)/gi;
 
   const replaced = text.replace(PROGRAMME_CLAUSE_RE, (_match, list: string) => {
-    const key = `${PROGRAMME_PLACEHOLDER_PREFIX}${counter}␀`;
+    const key = `${PROGRAMME_PLACEHOLDER_PREFIX}${counter}\u0000`;
     const names = list.split(',').map((p: string) => p.trim()).filter(Boolean);
     programmes.set(key, names);
     counter++;
@@ -158,7 +135,7 @@ function parseLeaf(text: string, programmeMap: Map<string, string[]>): PrereqNod
     return { type: 'MODULE', code: singleMatch[1] };
   }
 
-  return { type: 'OTHER', text: clean, label: summarizeOtherText(clean) };
+  return { type: 'OTHER', text: clean };
 }
 
 function parseExpression(text: string, programmeMap: Map<string, string[]>): PrereqNode {

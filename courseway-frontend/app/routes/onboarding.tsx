@@ -1,15 +1,5 @@
 /**
  * Onboarding  —  app/routes/onboarding.tsx
- *
- * Changes from original:
- *   - Wrapped in <ProtectedRoute> (redirects to /login if no token)
- *   - Raw fetch() → api.post() (Axios client)
- *   - localStorage.getItem("authToken") is now handled by the Axios interceptor
- *     so we don't need to read the token manually here
- *   - After finishing, calls auth.refreshProfile() to update AuthContext
- *   - Courseway brand applied: navy background, teal accents, JetBrains Mono for module chips
- *   - Cohort year is now a dropdown (AY2022/23 through AY2025/26)
- *   - Goals saved to localStorage so recommendations page can use them
  */
 
 import { useState, useEffect } from "react"
@@ -22,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Label } from "~/components/ui/label"
 import { ProtectedRoute, useAuth } from "~/context/AuthContext"
 import api from "~/lib/api"
+import { NUS_MAJORS } from "~/lib/nusMajors" // <-- IMPORT THE MAJORS LIST HERE
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -157,12 +148,12 @@ function OnboardingContent() {
         yearOfStudy: yearOfStudyInt,
       })
 
-      // 2. Save completed modules (only if any selected)
+      // 2. Save completed modules
       if (formData.modules.length > 0) {
         await api.post("/profile/modules", { moduleCodes: formData.modules })
       }
 
-      // 3. Save goals to localStorage so recommendations page can pass them to the AI
+      // 3. Save goals to localStorage
       localStorage.setItem("courseGoals", formData.goals)
 
       await refreshProfile()
@@ -239,14 +230,24 @@ function OnboardingContent() {
               </div>
 
               <div className="space-y-2">
-                <Label style={{ color: "rgba(240,244,255,0.7)" }}>Major</Label>
-                <Input
+                <Label style={{ color: "rgba(240,244,255,0.7)" }}>Major <span>{`(Primary Major Only)`}</span></Label>
+                <Select
                   value={formData.major}
-                  onChange={e => setFormData(prev => ({ ...prev, major: e.target.value }))}
-                  placeholder="e.g. Computer Science"
-                  style={{ backgroundColor: "var(--cw-navy)", borderColor: "var(--cw-navy-border)", color: "var(--cw-white)" }}
-                />
+                  onValueChange={val => handleSelectChange(val, "major")}
+                >
+                  <SelectTrigger style={{ backgroundColor: "var(--cw-navy)", borderColor: "var(--cw-navy-border)", color: "var(--cw-white)" }}>
+                    <SelectValue placeholder="Select major" />
+                  </SelectTrigger>
+                  <SelectContent style={{ backgroundColor: "var(--cw-navy-light)", maxHeight: "300px" }}>
+                    {NUS_MAJORS.map((major) => (
+                      <SelectItem key={major} value={major}>
+                        {major}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+              {/* ───────────────────────────────────────────── */}
 
               <div className="space-y-2">
                 <Label style={{ color: "rgba(240,244,255,0.7)" }}>Current year of study</Label>

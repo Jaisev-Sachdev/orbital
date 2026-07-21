@@ -9,4 +9,5 @@ export default [
   route("prerequisites",  "routes/prerequisites.tsx"),   
   route("module-planning","routes/module-planning.tsx"),
   route("profile",        "routes/profile.tsx"),
+  route("graduation",     "routes/graduation.tsx"),
 ] satisfies RouteConfig;

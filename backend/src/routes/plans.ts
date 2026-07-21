@@ -36,7 +36,6 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // GET /plans/shared/:token — public, unauthenticated, read-only view of a shared plan.
-// Registered before GET /:id so Express doesn't match "shared" as the :id param.
 router.get('/shared/:token', async (req: Request, res: Response) => {
   const token = String(req.params.token);
 
@@ -142,8 +141,7 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   res.json({ message: 'Plan deleted' });
 });
 
-// POST /plans/:id/share — enable sharing. Idempotent: returns the existing
-// token if the plan is already shared instead of rotating it on every call.
+// POST /plans/:id/share — enable sharing.
 router.post('/:id/share', requireAuth, async (req: AuthRequest, res: Response) => {
   const plan = await prisma.plan.findFirst({
     where: { id: String(req.params.id), userId: req.userId! }
@@ -491,8 +489,6 @@ router.get('/:id/requirements', requireAuth, async (req: AuthRequest, res: Respo
   const progress = computeRequirementsProgress(gradRequirements, plannedModules);
 
   // Fetch full module data (prerequisite, semesters offered) for every module
-  // referenced by a module_list requirement, so the 4-year planner has what
-  // it needs to check eligibility and semester availability.
   const allModuleListCodes = [...new Set(
     gradRequirements.categories
       .filter((cat: any) => cat.type === 'module_list')

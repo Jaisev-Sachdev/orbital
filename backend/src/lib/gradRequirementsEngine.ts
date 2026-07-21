@@ -40,6 +40,36 @@ export interface ExistingSlot {
   moduleCode: string;
 }
 
+// ---- Module equivalence (non-S-track alternates) -----------------------
+
+/**
+ * gradRequirements.json's module_list categories only enumerate the
+ * "canonical" code for each requirement slot (e.g. the S-track variant
+ * CS1101S/CS2030S/CS2040S/CS1231S). NUS offers standard-track equivalents
+ * that satisfy the exact same degree requirement (CS2030/CS2040 for the
+ * S-variants; CS1010/CS1010S/CS1010E/CS1010X as alternates to CS1101S).
+ * Without this map, a student who took the non-S version would show the
+ * canonical code as still missing (duplicate recommendations) AND have
+ * their completed module misclassified via the CS/IFS/CP prefix fallback
+ * in classifyModule, since it isn't literally in the foundation list.
+ *
+ * Maps alternate code -> canonical code used in gradRequirements.json.
+ */
+const MODULE_EQUIVALENTS: Record<string, string> = {
+  CS1010S: 'CS1101S',
+  CS1010: 'CS1101S',
+  CS1010E: 'CS1101S',
+  CS1010X: 'CS1101S',
+  CS1231: 'CS1231S',
+  CS2030: 'CS2030S',
+  CS2040: 'CS2040S',
+  CS2040C: 'CS2040S'
+};
+
+function canonicalize(code: string): string {
+  return MODULE_EQUIVALENTS[code] ?? code;
+}
+
 // ---- Category classification (MC-bucket heuristic) --------------------
 
 const GE_PREFIX_RE = /^GE[A-Z]/;
@@ -67,9 +97,11 @@ export function classifyModule(code: string, gradRequirements: GradRequirements)
     BREADTH_DEPTH_CATEGORY_KEYS.flatMap(key => [...getModuleListCodes(gradRequirements, key)])
   );
 
-  if (foundationCodes.has(code)) return 'foundation';
-  if (mathScienceCodes.has(code)) return 'math_science';
-  if (breadthDepthEnumeratedCodes.has(code)) return 'breadth_and_depth';
+  const canonical = canonicalize(code);
+
+  if (foundationCodes.has(canonical)) return 'foundation';
+  if (mathScienceCodes.has(canonical)) return 'math_science';
+  if (breadthDepthEnumeratedCodes.has(canonical)) return 'breadth_and_depth';
   if (GE_PREFIX_RE.test(code) || COMMON_CURRICULUM_EXTRA_CODES.has(code)) return 'common_curriculum';
   if (BREADTH_DEPTH_PREFIX_RE.test(code)) return 'breadth_and_depth';
   return 'unclassified';
@@ -81,7 +113,9 @@ export function computeRequirementsProgress(
   gradRequirements: GradRequirements,
   plannedModules: PlannedModule[]
 ) {
-  const plannedCodes = new Set(plannedModules.map(m => m.moduleCode));
+  // Canonicalized so a completed alternate (e.g. CS1010S) satisfies its
+  // canonical requirement slot (CS1101S) in module_list matching below.
+  const plannedCodes = new Set(plannedModules.map(m => canonicalize(m.moduleCode)));
   const totalMCsPlanned = plannedModules.reduce((sum, m) => sum + (m.credits ?? 0), 0);
 
   // Bucket every planned module by MC-heuristic classification once.
@@ -203,7 +237,10 @@ export function buildFourYearPlan(
   plannedModules: PlannedModule[],
   candidateModules: CandidateModule[]
 ): FourYearPlanResult {
-  const plannedCodes = new Set(plannedModules.map(m => m.moduleCode));
+  // Canonicalized so an already-completed alternate (e.g. CS2030) clears
+  // its canonical slot (CS2030S) instead of being recommended as a
+  // duplicate later in the plan.
+  const plannedCodes = new Set(plannedModules.map(m => canonicalize(m.moduleCode)));
   const candidateMap = new Map(candidateModules.map(m => [m.moduleCode, m]));
 
   const missingCodes = collectMissingRequiredCodes(gradRequirements, plannedCodes)

@@ -1,4 +1,5 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import prisma from '../lib/prisma';
 import requireAuth, { AuthRequest } from '../middleware/requireAuth';
 import gradRequirements from '../config/gradRequirements.json';
@@ -32,6 +33,55 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   });
 
   res.json({ plans });
+});
+
+// GET /plans/shared/:token — public, unauthenticated, read-only view of a shared plan.
+router.get('/shared/:token', async (req: Request, res: Response) => {
+  const token = String(req.params.token);
+
+  const plan = await prisma.plan.findFirst({
+    where: { shareToken: token },
+    include: {
+      semesters: true,
+      user: { select: { name: true } }
+    }
+  });
+
+  if (!plan) {
+    res.status(404).json({ error: 'Shared plan not found' });
+    return;
+  }
+
+  const moduleCodes = [...new Set(plan.semesters.map(s => s.moduleCode))];
+  const modules = await prisma.module.findMany({
+    where: { moduleCode: { in: moduleCodes } }
+  });
+  const moduleMap = new Map(modules.map(m => [m.moduleCode, m]));
+
+  const enrichedSlots = plan.semesters
+    .map(slot => ({
+      year: slot.year,
+      semester: slot.semester,
+      moduleCode: slot.moduleCode,
+      title: moduleMap.get(slot.moduleCode)?.title ?? null,
+      credits: moduleMap.get(slot.moduleCode)?.credits ?? null
+    }))
+    .sort((a, b) => a.year - b.year || a.semester - b.semester);
+
+  const grouped: Record<string, typeof enrichedSlots> = {};
+  for (const slot of enrichedSlots) {
+    const key = `year${slot.year}_sem${slot.semester}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(slot);
+  }
+
+  // Read-only view — no userId, no email, no edit-capable fields exposed.
+  res.json({
+    planName: plan.name,
+    ownerName: plan.user.name ?? 'A Courseway user',
+    slots: enrichedSlots,
+    grouped
+  });
 });
 
 // GET /plans/:id — get one plan with all semester slots
@@ -89,6 +139,65 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   // Cascade delete is handled by the schema (onDelete: Cascade on SemesterSlot)
   await prisma.plan.delete({ where: { id: String(req.params.id) } });
   res.json({ message: 'Plan deleted' });
+});
+
+// POST /plans/:id/share — enable sharing.
+router.post('/:id/share', requireAuth, async (req: AuthRequest, res: Response) => {
+  const plan = await prisma.plan.findFirst({
+    where: { id: String(req.params.id), userId: req.userId! }
+  });
+
+  if (!plan) {
+    res.status(404).json({ error: 'Plan not found' });
+    return;
+  }
+
+  const shareToken = plan.shareToken ?? crypto.randomBytes(16).toString('hex');
+
+  const updated = await prisma.plan.update({
+    where: { id: plan.id },
+    data: { shareToken }
+  });
+
+  res.json({ message: 'Sharing enabled', shareToken: updated.shareToken });
+});
+
+// POST /plans/:id/share/rotate — invalidate the current link and issue a new one
+router.post('/:id/share/rotate', requireAuth, async (req: AuthRequest, res: Response) => {
+  const plan = await prisma.plan.findFirst({
+    where: { id: String(req.params.id), userId: req.userId! }
+  });
+
+  if (!plan) {
+    res.status(404).json({ error: 'Plan not found' });
+    return;
+  }
+
+  const updated = await prisma.plan.update({
+    where: { id: plan.id },
+    data: { shareToken: crypto.randomBytes(16).toString('hex') }
+  });
+
+  res.json({ message: 'Share link rotated', shareToken: updated.shareToken });
+});
+
+// DELETE /plans/:id/share — disable sharing
+router.delete('/:id/share', requireAuth, async (req: AuthRequest, res: Response) => {
+  const plan = await prisma.plan.findFirst({
+    where: { id: String(req.params.id), userId: req.userId! }
+  });
+
+  if (!plan) {
+    res.status(404).json({ error: 'Plan not found' });
+    return;
+  }
+
+  await prisma.plan.update({
+    where: { id: plan.id },
+    data: { shareToken: null }
+  });
+
+  res.json({ message: 'Sharing disabled' });
 });
 
 // POST /plans/:id/slots — add a module to a semester slot
@@ -380,8 +489,6 @@ router.get('/:id/requirements', requireAuth, async (req: AuthRequest, res: Respo
   const progress = computeRequirementsProgress(gradRequirements, plannedModules);
 
   // Fetch full module data (prerequisite, semesters offered) for every module
-  // referenced by a module_list requirement, so the 4-year planner has what
-  // it needs to check eligibility and semester availability.
   const allModuleListCodes = [...new Set(
     gradRequirements.categories
       .filter((cat: any) => cat.type === 'module_list')

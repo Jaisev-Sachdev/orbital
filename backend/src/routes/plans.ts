@@ -300,7 +300,7 @@ router.get('/:id/workload', requireAuth, async (req: AuthRequest, res: Response)
   const OVERLOAD_MC_THRESHOLD = 23;
   const OVERLOAD_HOURS_THRESHOLD = 50;
   const PROJECT_HEAVY_HOURS = 6; // lab + project hours/week to count a module as "project-heavy"
-  const PROJECT_HEAVY_COUNT = 2; // number of project-heavy modules to trigger the flag
+  const PROJECT_HEAVY_COUNT = 2;
 
   const workload: Record<string, any> = {};
 
@@ -357,10 +357,7 @@ router.get('/:id/workload', requireAuth, async (req: AuthRequest, res: Response)
 });
 
 // GET /plans/:id/requirements — graduation requirements progress + 4-year recommendation.
-// Only available for the Computer Science major: gradRequirements.json is a
-// single CS+AI-focus ruleset with no per-major branching, and building that
-// out for all ~60 NUS majors is out of scope. Rather than silently apply the
-// CS ruleset to every major, this returns an explicit "not available" response.
+// Only available for the Computer Science major: gradRequirements.json 
 router.get('/:id/requirements', requireAuth, async (req: AuthRequest, res: Response) => {
   const plan = await prisma.plan.findFirst({
     where: { id: String(req.params.id), userId: req.userId! }
@@ -397,8 +394,6 @@ router.get('/:id/requirements', requireAuth, async (req: AuthRequest, res: Respo
   const progress = computeRequirementsProgress(gradRequirements, plannedModules);
 
   // Fetch full module data (prerequisite, semesters offered) for every module
-  // referenced by a module_list requirement, so the 4-year planner has what
-  // it needs to check eligibility and semester availability.
   const allModuleListCodes = [...new Set(
     gradRequirements.categories
       .filter((cat: any) => cat.type === 'module_list')

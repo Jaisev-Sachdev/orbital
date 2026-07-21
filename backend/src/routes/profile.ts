@@ -32,9 +32,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
 
   const trimmedMajor = major.trim();
 
-  // major must be one of NUS's primary majors (see config/nusMajors.ts) — no
-  // longer accepted as arbitrary free text now that the frontend offers a
-  // fixed autocomplete list.
+  // major must be one of NUS's primary majors (see config/nusMajors.ts)
   if (!NUS_MAJORS_SET.has(trimmedMajor)) {
     res.status(400).json({ error: `major must be one of the recognised NUS majors (got "${trimmedMajor}")` });
     return;

@@ -3,6 +3,7 @@ import prisma from '../lib/prisma';
 import requireAuth, { AuthRequest } from '../middleware/requireAuth';
 import gradRequirements from '../config/gradRequirements.json';
 import { computeRequirementsProgress, buildFourYearPlan } from '../lib/gradRequirementsEngine';
+import { CS_MAJOR } from '../config/nusMajors';
 
 const router = Router();
 
@@ -355,7 +356,11 @@ router.get('/:id/workload', requireAuth, async (req: AuthRequest, res: Response)
   res.json({ workload });
 });
 
-// GET /plans/:id/requirements — graduation requirements progress + 4-year recommendation
+// GET /plans/:id/requirements — graduation requirements progress + 4-year recommendation.
+// Only available for the Computer Science major: gradRequirements.json is a
+// single CS+AI-focus ruleset with no per-major branching, and building that
+// out for all ~60 NUS majors is out of scope. Rather than silently apply the
+// CS ruleset to every major, this returns an explicit "not available" response.
 router.get('/:id/requirements', requireAuth, async (req: AuthRequest, res: Response) => {
   const plan = await prisma.plan.findFirst({
     where: { id: String(req.params.id), userId: req.userId! }
@@ -363,6 +368,18 @@ router.get('/:id/requirements', requireAuth, async (req: AuthRequest, res: Respo
 
   if (!plan) {
     res.status(404).json({ error: 'Plan not found' });
+    return;
+  }
+
+  const profile = await prisma.profile.findUnique({
+    where: { userId: req.userId! }
+  });
+
+  if (!profile || profile.major !== CS_MAJOR) {
+    res.json({
+      available: false,
+      message: 'Graduation requirements tracking is currently only available for the Computer Science major.'
+    });
     return;
   }
 
@@ -407,6 +424,7 @@ router.get('/:id/requirements', requireAuth, async (req: AuthRequest, res: Respo
   );
 
   res.json({
+    available: true,
     ...progress,
     fourYearRecommendation
   });

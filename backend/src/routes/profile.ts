@@ -1,8 +1,11 @@
 import { Router, Response } from 'express';
 import prisma from '../lib/prisma';
 import requireAuth, { AuthRequest } from '../middleware/requireAuth';
+import { NUS_MAJORS } from '../config/nusMajors';
 
 const router = Router();
+
+const NUS_MAJORS_SET = new Set(NUS_MAJORS);
 
 // POST /profile — create or update profile
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
@@ -27,17 +30,27 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
     return;
   }
 
+  const trimmedMajor = major.trim();
+
+  // major must be one of NUS's primary majors (see config/nusMajors.ts) — no
+  // longer accepted as arbitrary free text now that the frontend offers a
+  // fixed autocomplete list.
+  if (!NUS_MAJORS_SET.has(trimmedMajor)) {
+    res.status(400).json({ error: `major must be one of the recognised NUS majors (got "${trimmedMajor}")` });
+    return;
+  }
+
   const profile = await prisma.profile.upsert({
     where: { userId: req.userId! },
     update: {
-      major: major.trim(),
+      major: trimmedMajor,
       faculty: faculty.trim(),
       yearOfStudy: parsedYearOfStudy,
       cohortYear: cohortYear.trim()
     },
     create: {
       userId: req.userId!,
-      major: major.trim(),
+      major: trimmedMajor,
       faculty: faculty.trim(),
       yearOfStudy: parsedYearOfStudy,
       cohortYear: cohortYear.trim()

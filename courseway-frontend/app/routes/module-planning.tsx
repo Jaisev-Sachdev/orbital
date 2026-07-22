@@ -72,6 +72,11 @@ export default function PlanBuilder() {
   const [isSearching, setIsSearching] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
 
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
+  const [selectedComparePlanIds, setSelectedComparePlanIds] = useState<string[]>([])
+  const [compareWorkloads, setCompareWorkloads] = useState<Record<string, WorkloadData>>({})
+  const [isFetchingCompare, setIsFetchingCompare] = useState(false)
+
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchQuery.trim()) {
@@ -92,6 +97,55 @@ export default function PlanBuilder() {
     setHasSearched(false)
     setIsSearchModalOpen(true)
   }
+
+  // Logic to open the modal and fetch initial data
+  const handleOpenCompare = async () => {
+    // Select up to 3 plans to compare, starting with the current one
+    const initialIds = [currentPlanId, ...plans.filter(p => p.id !== currentPlanId).map(p => p.id)]
+      .filter(Boolean)
+      .slice(0, 3) as string[];
+    
+    setSelectedComparePlanIds(initialIds);
+    setIsCompareModalOpen(true);
+    await fetchCompareData(initialIds);
+  };
+
+
+  const fetchCompareData = async (planIds: string[]) => {
+    setIsFetchingCompare(true);
+    const newWorkloads = { ...compareWorkloads };
+    
+    try {
+      await Promise.all(
+        planIds.map(async (id) => {
+          const { data } = await api.get(`/plans/${id}/workload`);
+          newWorkloads[id] = data;
+        })
+      );
+      setCompareWorkloads(newWorkloads);
+    } catch (error) {
+      console.error("Failed to fetch workloads for comparison:", error);
+    } finally {
+      setIsFetchingCompare(false);
+    }
+  };
+
+  const toggleComparePlan = async (planId: string) => {
+    let newSelection = [...selectedComparePlanIds];
+    
+    if (newSelection.includes(planId)) {
+      newSelection = newSelection.filter(id => id !== planId);
+    } else {
+      if (newSelection.length >= 3) {
+        alert("You can only compare up to 3 plans at a time.");
+        return;
+      }
+      newSelection.push(planId);
+    }
+    
+    setSelectedComparePlanIds(newSelection);
+    await fetchCompareData(newSelection);
+  };
 
   const executeSearch = async (queryToSearch?: string) => {
     const q = queryToSearch !== undefined ? queryToSearch : searchQuery
@@ -382,6 +436,127 @@ export default function PlanBuilder() {
               </div>
             </DialogContent>
           </Dialog>
+
+          <Dialog open={isCompareModalOpen} onOpenChange={setIsCompareModalOpen}>
+          <DialogContent className="bg-[var(--cw-navy)] border-[var(--cw-navy-border)] text-white sm:max-w-[90vw] h-[85vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle className="text-2xl">Compare Plans</DialogTitle>
+              <DialogDescription className="text-slate-400">
+                Select up to 3 plans to compare their workload breakdowns side-by-side.
+              </DialogDescription>
+              
+              <div className="flex flex-wrap gap-2 mt-4 pb-2 border-b border-[var(--cw-navy-border)]">
+                {plans.map(p => {
+                  const isSelected = selectedComparePlanIds.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => toggleComparePlan(p.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        isSelected 
+                          ? "bg-[var(--cw-teal-glow)] text-[var(--cw-teal)] border-[var(--cw-teal)]" 
+                          : "bg-[var(--cw-navy-light)] text-slate-400 border-[var(--cw-navy-border)] hover:text-white"
+                      }`}
+                    >
+                      {p.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </DialogHeader>
+
+            {/* Comparison Grid */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar mt-4">
+              {isFetchingCompare ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Loading comparison data...
+                </div>
+              ) : (
+                <div className={`grid gap-6 ${
+                  selectedComparePlanIds.length === 1 ? 'grid-cols-1 max-w-md mx-auto' : 
+                  selectedComparePlanIds.length === 2 ? 'grid-cols-2 max-w-4xl mx-auto' : 
+                  'grid-cols-3'
+                }`}>
+                  {(() => {
+                    // 1. Get a unique, sorted list of every semester that has data across ALL selected plans
+                    const allActiveSemKeys = Array.from(
+                      new Set(
+                        selectedComparePlanIds.flatMap(id => 
+                          Object.keys(compareWorkloads[id]?.workload || {})
+                        )
+                      )
+                    ).sort(); // Alphabetical sort naturally orders year1_sem1, year1_sem2 perfectly!
+
+                    return selectedComparePlanIds.map(planId => {
+                      const planDetails = plans.find(p => p.id === planId);
+                      const wData = compareWorkloads[planId]?.workload || {};
+                      
+                      return (
+                        <div key={planId} className="flex flex-col gap-4 border border-[var(--cw-navy-border)] bg-[var(--cw-navy-light)] rounded-lg p-4">
+                          <h3 className="text-lg font-bold text-center border-b border-[var(--cw-navy-border)] pb-2 text-[var(--cw-teal)]">
+                            {planDetails?.name}
+                          </h3>
+                          
+                          {allActiveSemKeys.length === 0 ? (
+                            <p className="text-sm text-slate-400 text-center py-8">No workload data.</p>
+                          ) : (
+                            allActiveSemKeys.map(semKey => {
+                              const semData = wData[semKey];
+                              const semTitle = semKey.replace('year', 'Y').replace('_sem', ' S');
+
+                              // If this specific plan doesn't have data for this semester, render an aligned placeholder
+                              if (!semData) {
+                                return (
+                                  <div key={semKey} className="bg-[var(--cw-navy)] rounded-lg border border-dashed border-[var(--cw-navy-border)] opacity-60 flex flex-col items-center justify-center min-h-[140px]">
+                                    <span className="font-bold text-xs text-slate-500 mb-1">{semTitle}</span>
+                                    <span className="text-[10px] text-slate-600">No modules planned</span>
+                                  </div>
+                                );
+                              }
+
+                              // Standard render
+                              return (
+                                <div key={semKey} className="bg-[var(--cw-navy)] rounded-lg border border-[var(--cw-navy-border)] overflow-hidden">
+                                  <div className="bg-[rgba(0,0,0,0.2)] px-3 py-2 border-b border-[var(--cw-navy-border)] flex justify-between items-center">
+                                    <span className="font-bold text-xs text-white">
+                                      {semTitle}
+                                    </span>
+                                    <div className="flex gap-2 text-[10px] text-muted-foreground">
+                                      <span>{semData.totalMCs} MCs</span>
+                                      <span className={semData.totalHours > 50 ? "text-red-400" : "text-[var(--cw-teal)]"}>
+                                        {semData.totalHours}h
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="p-3">
+                                    <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+                                      <div className="flex justify-between bg-[rgba(240,244,255,0.05)] rounded px-2 py-1">
+                                        <span className="text-slate-400">Lecture:</span><span className="text-white">{semData.breakdown.lecture}h</span>
+                                      </div>
+                                      <div className="flex justify-between bg-[rgba(240,244,255,0.05)] rounded px-2 py-1">
+                                        <span className="text-slate-400">Tutorial:</span><span className="text-white">{semData.breakdown.tutorial}h</span>
+                                      </div>
+                                      <div className="flex justify-between bg-[rgba(240,244,255,0.05)] rounded px-2 py-1">
+                                        <span className="text-slate-400">Lab:</span><span className="text-white">{semData.breakdown.lab}h</span>
+                                      </div>
+                                      <div className="flex justify-between bg-[rgba(240,244,255,0.05)] rounded px-2 py-1">
+                                        <span className="text-slate-400">Project:</span><span className="text-white">{semData.breakdown.project}h</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
+            </div>
+            </DialogContent> 
+        </Dialog>
           
           <div className="px-8 pt-6 pb-2 border-b border-[var(--cw-navy-border)]">
             <div className="flex items-center justify-between">
@@ -417,6 +592,18 @@ export default function PlanBuilder() {
                 </p>
               </div>
 
+              <div className="flex gap-2">
+              <button
+                onClick={handleOpenCompare}
+                disabled={plans.length < 2}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors border ${
+                  plans.length < 2 
+                    ? "opacity-50 cursor-not-allowed bg-[var(--cw-navy-light)] text-muted-foreground border-[var(--cw-navy-border)]"
+                    : "bg-[var(--cw-navy-light)] text-white border-[var(--cw-navy-border)] hover:bg-[var(--cw-navy-border)]"
+                }`}
+              >
+                Compare Plans
+              </button>
               <button
                 onClick={() => setIsWorkloadOpen(!isWorkloadOpen)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors border ${
@@ -428,6 +615,7 @@ export default function PlanBuilder() {
                 <Activity size={16} />
                 Workload Analysis
               </button>
+              </div>
             </div>
           </div>
 
@@ -525,7 +713,7 @@ export default function PlanBuilder() {
                                   </div>
                                   <div className="flex justify-between items-center text-xs bg-[rgba(240,244,255,0.05)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)]">
                                     <span className="text-muted-foreground">Project:</span>
-                                    <span className="text-amber-400 font-medium">{semData.breakdown.project}h</span>
+                                    <span className="text-white font-medium">{semData.breakdown.project}h</span>
                                   </div>
                                   <div className="flex justify-between items-center text-xs bg-[rgba(240,244,255,0.05)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)] col-span-2">
                                     <span className="text-muted-foreground">Prep (Self-Study):</span>

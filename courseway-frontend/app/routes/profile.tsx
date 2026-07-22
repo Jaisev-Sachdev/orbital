@@ -6,8 +6,9 @@ import { TooltipProvider } from "~/components/ui/tooltip"
 import { Input } from "~/components/ui/input"
 import { Button } from "~/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { User, BookOpen, GraduationCap, Mail } from "lucide-react"
+import { User, GraduationCap, Mail } from "lucide-react" 
 import api from "~/lib/api"
+import { NUS_MAJORS } from "~/lib/nusMajors"
 
 export default function ProfileSettings() {
   const [isLoading, setIsLoading] = useState(true)
@@ -16,7 +17,7 @@ export default function ProfileSettings() {
 
   // Form State
   const [name, setName] = useState("")
-  const [email, setEmail] = useState("") // Read-only
+  const [email, setEmail] = useState("") 
   const [major, setMajor] = useState("")
   const [faculty, setFaculty] = useState("")
   const [yearOfStudy, setYearOfStudy] = useState<number | "">("")
@@ -134,7 +135,7 @@ export default function ProfileSettings() {
                     </div>
                   </div>
 
-                  {/* Academic Profile Section */}
+        
                   <div className="bg-[var(--cw-navy)] border border-[var(--cw-navy-border)] rounded-lg p-6 shadow-sm">
                     <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
                       <GraduationCap className="text-[var(--cw-teal)]" size={20} />
@@ -142,21 +143,24 @@ export default function ProfileSettings() {
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       
-                      {/* Major - Keeps standard Input */}
+              
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium text-slate-300">Major</label>
-                        <div className="relative">
-                          <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                          <Input 
-                            value={major} 
-                            onChange={(e) => setMajor(e.target.value)}
-                            placeholder="e.g., Computer Science"
-                            className="pl-9 bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white focus-visible:ring-[var(--cw-teal)]"
-                          />
-                        </div>
+                        <Select value={major} onValueChange={setMajor}>
+                          <SelectTrigger className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white focus:ring-[var(--cw-teal)]">
+                            <SelectValue placeholder="Select major" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white max-h-[300px]">
+                            {NUS_MAJORS.map((m) => (
+                              <SelectItem key={m} value={m}>
+                                {m}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
-                      {/* Faculty - Replaced with Select */}
+              
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium text-slate-300">Faculty</label>
                         <Select value={faculty} onValueChange={setFaculty}>
@@ -175,7 +179,7 @@ export default function ProfileSettings() {
                         </Select>
                       </div>
 
-                      {/* Year of Study - Replaced with Select */}
+                 
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium text-slate-300">Year of Study</label>
                         <Select 
@@ -196,7 +200,7 @@ export default function ProfileSettings() {
                         </Select>
                       </div>
 
-                      {/* Cohort Year - Replaced with Select */}
+                
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium text-slate-300">Cohort Year</label>
                         <Select value={cohortYear} onValueChange={setCohortYear}>

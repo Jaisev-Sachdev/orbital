@@ -179,8 +179,7 @@ function OnboardingContent() {
     >
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8">
-        <span className="text-2xl font-bold" style={{ color: "var(--cw-teal)" }}>⌘</span>
-        <span className="text-xl font-bold" style={{ color: "var(--cw-white)" }}>Courseway</span>
+        <img src="/logo.png" alt="Courseway" className="h-9 w-auto" />
       </div>
 
       <div

@@ -75,8 +75,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
       >
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="text-2xl font-bold" style={{ color: "var(--cw-teal)" }}>⌘</span>
-            <span className="text-xl font-bold" style={{ color: "var(--cw-white)" }}>Courseway</span>
+            <img src="/logo.png" alt="Courseway" className="h-9 w-auto" />
           </div>
           <CardTitle style={{ color: "var(--cw-white)" }}>Create your account</CardTitle>
           <CardDescription style={{ color: "rgba(240,244,255,0.5)" }}>

@@ -2,15 +2,15 @@ import { useState, useEffect } from "react"
 import { AppSidebar } from "~/components/app-sidebar"
 import { SiteHeader } from "~/components/site-header"
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar"
-import { CheckCircle2, Circle, AlertTriangle, Info, BookOpen, GraduationCap } from "lucide-react"
+import { CheckCircle2, Circle, AlertTriangle, Info, BookOpen, GraduationCap, ChevronDown, ChevronUp } from "lucide-react"
 import { TooltipProvider } from "~/components/ui/tooltip"
 import api from "~/lib/api"
 
+// --- Updated TypeScript Interfaces based on the new API ---
 interface ModuleItem {
   moduleCode: string
   title?: string
   credits?: number
-  satisfied?: boolean 
 }
 
 interface Category {
@@ -18,9 +18,15 @@ interface Category {
   label: string
   type: "module_list" | "mc_total"
   satisfied: boolean
-  modules?: ModuleItem[]
-  mcsPlanned?: number
+  notes?: string | null
+  // For mc_total
   mcsRequired?: number
+  mcsPlanned?: number
+  // For module_list
+  required?: string[]
+  taken?: string[]
+  missing?: string[]
+  minRequired?: number
 }
 
 interface UnscheduledModule {
@@ -50,6 +56,119 @@ interface RequirementsResponse {
   fourYearRecommendation: FourYearRecommendation
 }
 
+// --- New Category Card Component with Dropdown Logic ---
+const CategoryCard = ({ category }: { category: Category }) => {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <div 
+      className={`p-4 rounded-lg border transition-all duration-200 ${
+        category.satisfied 
+          ? "bg-[rgba(0,201,167,0.05)] border-[rgba(0,201,167,0.3)]" 
+          : "bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] hover:border-slate-500"
+      }`}
+    >
+      {/* Header (Clickable) */}
+      <div 
+        className="flex justify-between items-center cursor-pointer select-none"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <h3 className="font-semibold text-white flex items-center gap-2">
+          {category.satisfied ? (
+            <CheckCircle2 size={18} className="text-[var(--cw-teal)] flex-shrink-0" />
+          ) : (
+            <Circle size={18} className="text-slate-500 flex-shrink-0" />
+          )}
+          {category.label}
+        </h3>
+        
+        <div className="flex items-center gap-3">
+          {category.type === "mc_total" && (
+            <span className={`text-xs font-medium px-2 py-1 rounded bg-[var(--cw-navy)] ${
+              category.satisfied ? "text-[var(--cw-teal)]" : "text-slate-400"
+            }`}>
+              {category.mcsPlanned} / {category.mcsRequired} MCs
+            </span>
+          )}
+          {isOpen ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+        </div>
+      </div>
+
+      {/* Render MC Totals Progress Bar (Always visible if mc_total) */}
+      {category.type === "mc_total" && (
+        <div className="w-full bg-[var(--cw-navy)] rounded-full h-1.5 mt-3">
+          <div 
+            className="bg-[var(--cw-teal)] h-1.5 rounded-full" 
+            style={{ width: `${Math.min(((category.mcsPlanned || 0) / (category.mcsRequired || 1)) * 100, 100)}%` }}
+          ></div>
+        </div>
+      )}
+
+      {/* Dropdown Content */}
+      {isOpen && (
+        <div className="mt-4 pt-4 border-t border-[var(--cw-navy-border)] animate-in fade-in slide-in-from-top-2 duration-200">
+          
+          {/* Notes section */}
+          {category.notes && (
+            <div className="mb-4 bg-[rgba(240,244,255,0.03)] p-3 rounded-md border border-[rgba(240,244,255,0.1)]">
+              <p className="text-sm text-slate-300 leading-relaxed text-justify">
+                {category.notes}
+              </p>
+            </div>
+          )}
+
+          {/* Module Lists */}
+          {category.type === "module_list" && (
+            <div className="flex flex-col gap-4">
+              {category.minRequired && (
+                <div className="text-xs text-[var(--cw-teal)] font-semibold bg-[var(--cw-teal-glow)] inline-block px-2 py-1 rounded w-max">
+                  Requirements: Complete at least {category.minRequired} module(s) from this list.
+                </div>
+              )}
+              
+              {/* Taken Modules */}
+              <div>
+                <h4 className="text-xs text-slate-500 uppercase font-bold mb-2 tracking-wider">
+                  Completed / Planned ({category.taken?.length || 0})
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {category.taken && category.taken.length > 0 ? (
+                    category.taken.map(code => (
+                      <span key={code} className="module-chip bg-[var(--cw-teal-glow)] text-[var(--cw-teal)] border-[var(--cw-teal)]">
+                        {code}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-slate-500 italic">No modules taken yet.</span>
+                  )}
+                </div>
+              </div>
+              
+              {/* Missing Modules */}
+              <div>
+                <h4 className="text-xs text-slate-500 uppercase font-bold mb-2 tracking-wider">
+                  Missing / Available Options ({category.missing?.length || 0})
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {category.missing && category.missing.length > 0 ? (
+                    category.missing.map(code => (
+                      <span key={code} className="module-chip opacity-60 border-slate-600 text-slate-400 hover:opacity-100 hover:border-slate-400">
+                        {code}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-slate-500 italic">Requirements fulfilled.</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function GraduationRequirements() {
   const [plans, setPlans] = useState<{ id: string; name: string }[]>([])
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null)
@@ -58,7 +177,6 @@ export default function GraduationRequirements() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 1. Load available plans on mount
   useEffect(() => {
     const fetchPlans = async () => {
       try {
@@ -74,7 +192,6 @@ export default function GraduationRequirements() {
     fetchPlans()
   }, [])
 
-  // 2. Fetch requirements when currentPlanId changes
   useEffect(() => {
     if (!currentPlanId) return
 
@@ -83,10 +200,18 @@ export default function GraduationRequirements() {
       setError(null)
       try {
         const { data } = await api.get(`/plans/${currentPlanId}/requirements`)
+        
+        if (data.available === false) {
+          setError(data.message || "Graduation requirements tracking is currently unavailable for your major.")
+          setReqData(null)
+          return
+        }
+
         setReqData(data)
       } catch (err: any) {
         console.error("Failed to fetch requirements", err)
-        setError("Could not load graduation requirements. Please try again.")
+        setError(err.response?.data?.message || "Could not load graduation requirements. Please try again.")
+        setReqData(null)
       } finally {
         setIsLoading(false)
       }
@@ -100,7 +225,7 @@ export default function GraduationRequirements() {
   }
 
   return (
-    <TooltipProvider>
+    <TooltipProvider>]
     <SidebarProvider
       style={{
         "--sidebar-width": "calc(var(--spacing) * 72)",
@@ -148,13 +273,19 @@ export default function GraduationRequirements() {
               Analyzing degree requirements...
             </div>
           ) : error ? (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-md">
-              {error}
+            <div className="max-w-md mx-auto mt-16 bg-[var(--cw-navy-light)] border border-[rgba(255,179,71,0.3)] rounded-lg p-8 flex flex-col items-center text-center gap-4">
+              <div className="bg-[rgba(255,179,71,0.1)] p-3 rounded-full text-warning">
+                <Info size={28} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white mb-2">Not Yet Supported</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  {error}
+                </p>
+              </div>
             </div>
           ) : reqData ? (
             <div className="max-w-6xl mx-auto flex flex-col gap-8">
-              
-              {/* Top Overview Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-[var(--cw-navy-light)] border border-[var(--cw-navy-border)] p-5 rounded-lg flex flex-col gap-1">
                   <span className="text-sm text-slate-400">Programme</span>
@@ -189,58 +320,9 @@ export default function GraduationRequirements() {
                     Requirement Categories
                   </h2>
                   
+                  {/* Render mapping through new CategoryCard component */}
                   {reqData.categories.map((category) => (
-                    <div 
-                      key={category.key} 
-                      className={`p-4 rounded-lg border transition-colors ${
-                        category.satisfied 
-                          ? "bg-[rgba(0,201,167,0.05)] border-[rgba(0,201,167,0.3)]" 
-                          : "bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)]"
-                      }`}
-                    >
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-semibold text-white flex items-center gap-2">
-                          {category.satisfied ? (
-                            <CheckCircle2 size={18} className="text-[var(--cw-teal)]" />
-                          ) : (
-                            <Circle size={18} className="text-slate-500" />
-                          )}
-                          {category.label}
-                        </h3>
-                        {category.type === "mc_total" && (
-                          <span className={`text-xs font-medium px-2 py-1 rounded bg-[var(--cw-navy)] ${
-                            category.satisfied ? "text-[var(--cw-teal)]" : "text-slate-400"
-                          }`}>
-                            {category.mcsPlanned} / {category.mcsRequired} MCs
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Render Module Lists */}
-                      {category.type === "module_list" && category.modules && (
-                        <div className="flex flex-wrap gap-2">
-                          {category.modules.map(mod => (
-                            <span 
-                              key={mod.moduleCode} 
-                              className={`module-chip ${!mod.satisfied && "opacity-50 grayscale border-slate-600 text-slate-400"}`}
-                              title={mod.title}
-                            >
-                              {mod.moduleCode}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Render MC Totals (Progress Bar) */}
-                      {category.type === "mc_total" && (
-                        <div className="w-full bg-[var(--cw-navy)] rounded-full h-1.5 mt-2">
-                          <div 
-                            className="bg-[var(--cw-teal)] h-1.5 rounded-full" 
-                            style={{ width: `${Math.min(((category.mcsPlanned || 0) / (category.mcsRequired || 1)) * 100, 100)}%` }}
-                          ></div>
-                        </div>
-                      )}
-                    </div>
+                    <CategoryCard key={category.key} category={category} />
                   ))}
                 </div>
 

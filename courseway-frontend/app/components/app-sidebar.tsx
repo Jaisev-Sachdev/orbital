@@ -15,7 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar"
-import { Calendar, Network, DatabaseIcon, Sparkles, Users } from "lucide-react"
+import { Calendar, Network, DatabaseIcon, Sparkles, Users, GraduationCap } from "lucide-react"
 import api from "~/lib/api"
 
 // Removed the hardcoded user data from here
@@ -36,6 +36,11 @@ const data = {
       url: "/prerequisites",
       icon: <Network />,
     },
+    {
+      title: "Graduation Requirements",
+      url: "/graduation",
+      icon: <GraduationCap />,
+    }
   ],
   documents: [
     {

@@ -313,7 +313,7 @@ export default function PlanBuilder() {
     } catch {
       setPlan(prev => ({
         ...prev,
-        [semKey]: prev[semKey].filter(m => m.moduleCode !== module.moduleCode),
+        [semKey]: prev[semKey].filter(m => m.id !== tempId),
       }))
     }
   }

@@ -35,7 +35,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('authToken')
       localStorage.removeItem('userEmail')
-      // Don't hard redirect here — let the ProtectedRoute handle the UI
+      window.dispatchEvent(new Event('auth:expired'))
     }
     return Promise.reject(error)
   }

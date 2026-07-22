@@ -88,6 +88,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = '/login'
   }, [])
 
+  // If the api client hits a 401, the token is already cleared by the
+  // interceptor. React to it immediately instead of waiting for the next
+  // route change to notice the token is gone.
+  useEffect(() => {
+    const handleExpired = () => {
+      setIsLoggedIn(false)
+      setEmail('')
+      setProfile(null)
+      window.location.href = '/login'
+    }
+    window.addEventListener('auth:expired', handleExpired)
+    return () => window.removeEventListener('auth:expired', handleExpired)
+  }, [])
+
   return (
     <AuthContext.Provider value={{ isLoggedIn, email, profile, login, logout, refreshProfile }}>
       {children}

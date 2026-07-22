@@ -164,6 +164,11 @@ export default function PlanBuilder() {
 
   const confirmAddFromSearch = async (module: Module) => {
     if (!activeSemesterKey) return
+    const alreadyInSemester = plan[activeSemesterKey]?.some(m => m.moduleCode === module.moduleCode)
+    if (alreadyInSemester) {
+      alert(`${module.moduleCode} is already in this semester.`)
+      return
+    }
     await handleAdd(activeSemesterKey, module)
     setIsSearchModalOpen(false)
   }
@@ -306,15 +311,17 @@ export default function PlanBuilder() {
       setPlan(prev => ({
         ...prev,
         [semKey]: prev[semKey].map(m =>
-          m.moduleCode === module.moduleCode ? { ...m, id: data.slot.id } : m
+          m.id === tempId ? { ...m, id: data.slot.id } : m
         ),
       }))
       loadWorkload(currentPlanId)
-    } catch {
+    } catch (error: any) {
       setPlan(prev => ({
         ...prev,
         [semKey]: prev[semKey].filter(m => m.id !== tempId),
       }))
+      const message = error?.response?.data?.error || 'Failed to add module. Please try again.'
+      alert(message)
     }
   }
 
@@ -414,25 +421,35 @@ export default function PlanBuilder() {
                 {searchResults.length === 0 && !isSearching && hasSearched && searchQuery && (
                   <p className="text-sm text-slate-400 text-center py-4">No modules found.</p>
                 )}
-                {searchResults.map((mod) => (
-                  <button
-                    key={mod.moduleCode}
-                    onClick={() => confirmAddFromSearch(mod)}
-                    className="flex flex-col text-left p-3 rounded-md border border-[var(--cw-navy-border)] hover:border-[var(--cw-teal)] bg-[var(--cw-navy-light)] transition-colors group"
-                  >
-                    <div className="flex justify-between items-center w-full">
-                      <span className="font-bold text-white group-hover:text-[var(--cw-teal)] transition-colors">
-                        {mod.moduleCode}
+                {searchResults.map((mod) => {
+                  const alreadyInSemester = activeSemesterKey
+                    ? plan[activeSemesterKey]?.some(m => m.moduleCode === mod.moduleCode)
+                    : false
+                  return (
+                    <button
+                      key={mod.moduleCode}
+                      onClick={() => confirmAddFromSearch(mod)}
+                      disabled={alreadyInSemester}
+                      className={`flex flex-col text-left p-3 rounded-md border transition-colors group ${
+                        alreadyInSemester
+                          ? "border-[var(--cw-navy-border)] bg-[var(--cw-navy-light)]/50 opacity-50 cursor-not-allowed"
+                          : "border-[var(--cw-navy-border)] hover:border-[var(--cw-teal)] bg-[var(--cw-navy-light)]"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center w-full">
+                        <span className="font-bold text-white group-hover:text-[var(--cw-teal)] transition-colors">
+                          {mod.moduleCode}
+                        </span>
+                        <span className="text-xs font-medium bg-[var(--cw-navy)] px-2 py-1 rounded text-slate-300">
+                          {alreadyInSemester ? "Added" : `${mod.credits} MCs`}
+                        </span>
+                      </div>
+                      <span className="text-sm text-slate-400 mt-1 truncate w-full">
+                        {mod.title}
                       </span>
-                      <span className="text-xs font-medium bg-[var(--cw-navy)] px-2 py-1 rounded text-slate-300">
-                        {mod.credits} MCs
-                      </span>
-                    </div>
-                    <span className="text-sm text-slate-400 mt-1 truncate w-full">
-                      {mod.title}
-                    </span>
-                  </button>
-                ))}
+                    </button>
+                  )
+                })}
               </div>
             </DialogContent>
           </Dialog>

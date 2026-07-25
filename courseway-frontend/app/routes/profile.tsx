@@ -86,13 +86,13 @@ export default function ProfileSettings() {
         } as React.CSSProperties}
       >
         <AppSidebar variant="inset" isLoggedIn={true} />
-        <SidebarInset className="flex flex-col h-screen overflow-hidden bg-[var(--cw-navy-dark)]">
+        <SidebarInset className="flex flex-col h-screen overflow-hidden bg-[var(--cw-navy)]">
           <SiteHeader />
 
           <div className="flex-1 overflow-auto p-8 custom-scrollbar">
             <div className="max-w-2xl mx-auto">
               <div className="mb-8 border-b border-[var(--cw-navy-border)] pb-4">
-                <h1 className="text-3xl font-bold tracking-tight text-white">Profile Settings</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-[var(--cw-white)]">Profile Settings</h1>
                 <p className="text-muted-foreground mt-2">
                   Manage your personal information and academic details.
                 </p>
@@ -107,29 +107,29 @@ export default function ProfileSettings() {
                   
                   {/* Account Settings Section */}
                   <div className="bg-[var(--cw-navy)] border border-[var(--cw-navy-border)] rounded-lg p-6 shadow-sm">
-                    <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                    <h2 className="text-xl font-semibold text-[var(--cw-white)] mb-4 flex items-center gap-2">
                       <User className="text-[var(--cw-teal)]" size={20} />
                       Account Details
                     </h2>
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-slate-300">Email Address (Read-only)</label>
+                        <label className="text-sm font-medium text-slate-500">Email Address (Read-only)</label>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                           <Input 
                             value={email} 
                             disabled 
-                            className="pl-9 bg-black/20 border-[var(--cw-navy-border)] text-slate-400 cursor-not-allowed"
+                            className="pl-9 bg-[rgba(10,22,40,0.03)] border-[var(--cw-navy-border)] text-slate-400 cursor-not-allowed"
                           />
                         </div>
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-slate-300">Display Name</label>
+                        <label className="text-sm font-medium text-slate-500">Display Name</label>
                         <Input 
                           value={name} 
                           onChange={(e) => setName(e.target.value)}
                           placeholder="e.g., Jane Doe"
-                          className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white focus-visible:ring-[var(--cw-teal)]"
+                          className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-[var(--cw-white)] focus-visible:ring-[var(--cw-teal)]"
                         />
                       </div>
                     </div>
@@ -137,7 +137,7 @@ export default function ProfileSettings() {
 
         
                   <div className="bg-[var(--cw-navy)] border border-[var(--cw-navy-border)] rounded-lg p-6 shadow-sm">
-                    <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                    <h2 className="text-xl font-semibold text-[var(--cw-white)] mb-4 flex items-center gap-2">
                       <GraduationCap className="text-[var(--cw-teal)]" size={20} />
                       Academic Profile
                     </h2>
@@ -145,12 +145,12 @@ export default function ProfileSettings() {
                       
               
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-slate-300">Major</label>
+                        <label className="text-sm font-medium text-slate-500">Major</label>
                         <Select value={major} onValueChange={setMajor}>
-                          <SelectTrigger className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white focus:ring-[var(--cw-teal)]">
+                          <SelectTrigger className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-[var(--cw-white)] focus:ring-[var(--cw-teal)]">
                             <SelectValue placeholder="Select major" />
                           </SelectTrigger>
-                          <SelectContent className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white max-h-[300px]">
+                          <SelectContent className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-[var(--cw-white)] max-h-[300px]">
                             {NUS_MAJORS.map((m) => (
                               <SelectItem key={m} value={m}>
                                 {m}
@@ -162,12 +162,12 @@ export default function ProfileSettings() {
 
               
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-slate-300">Faculty</label>
+                        <label className="text-sm font-medium text-slate-500">Faculty</label>
                         <Select value={faculty} onValueChange={setFaculty}>
-                          <SelectTrigger className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white focus:ring-[var(--cw-teal)]">
+                          <SelectTrigger className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-[var(--cw-white)] focus:ring-[var(--cw-teal)]">
                             <SelectValue placeholder="Select faculty" />
                           </SelectTrigger>
-                          <SelectContent className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white">
+                          <SelectContent className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-[var(--cw-white)]">
                             <SelectItem value="School of Computing">School of Computing</SelectItem>
                             <SelectItem value="Faculty of Science">Faculty of Science</SelectItem>
                             <SelectItem value="School of Business">School of Business</SelectItem>
@@ -181,15 +181,15 @@ export default function ProfileSettings() {
 
                  
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-slate-300">Year of Study</label>
+                        <label className="text-sm font-medium text-slate-500">Year of Study</label>
                         <Select 
                           value={yearOfStudy ? yearOfStudy.toString() : ""} 
                           onValueChange={(val) => setYearOfStudy(parseInt(val, 10))}
                         >
-                          <SelectTrigger className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white focus:ring-[var(--cw-teal)]">
+                          <SelectTrigger className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-[var(--cw-white)] focus:ring-[var(--cw-teal)]">
                             <SelectValue placeholder="Select year" />
                           </SelectTrigger>
-                          <SelectContent className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white">
+                          <SelectContent className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-[var(--cw-white)]">
                             <SelectItem value="1">Year 1</SelectItem>
                             <SelectItem value="2">Year 2</SelectItem>
                             <SelectItem value="3">Year 3</SelectItem>
@@ -202,12 +202,12 @@ export default function ProfileSettings() {
 
                 
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-slate-300">Cohort Year</label>
+                        <label className="text-sm font-medium text-slate-500">Cohort Year</label>
                         <Select value={cohortYear} onValueChange={setCohortYear}>
-                          <SelectTrigger className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white focus:ring-[var(--cw-teal)]">
+                          <SelectTrigger className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-[var(--cw-white)] focus:ring-[var(--cw-teal)]">
                             <SelectValue placeholder="Select cohort" />
                           </SelectTrigger>
-                          <SelectContent className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white">
+                          <SelectContent className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-[var(--cw-white)]">
                             <SelectItem value="AY2022/23">AY2022/23</SelectItem>
                             <SelectItem value="AY2023/24">AY2023/24</SelectItem>
                             <SelectItem value="AY2024/25">AY2024/25</SelectItem>
@@ -223,7 +223,7 @@ export default function ProfileSettings() {
                   <div className="flex items-center justify-between pt-4">
                     <div>
                       {message && (
-                        <p className={`text-sm font-medium ${message.type === 'success' ? 'text-[var(--cw-teal)]' : 'text-red-400'}`}>
+                        <p className={`text-sm font-medium ${message.type === 'success' ? 'text-[var(--cw-teal)]' : 'text-red-500'}`}>
                           {message.text}
                         </p>
                       )}
@@ -231,7 +231,7 @@ export default function ProfileSettings() {
                     <Button 
                       onClick={handleSave} 
                       disabled={isSaving}
-                      className="bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)] min-w-[120px]"
+                      className="bg-[var(--cw-teal)] text-white hover:bg-[var(--cw-teal-dim)] min-w-[120px]"
                     >
                       {isSaving ? "Saving..." : "Save Changes"}
                     </Button>

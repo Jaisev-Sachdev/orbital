@@ -364,7 +364,7 @@ export default function PlanBuilder() {
                   value={newPlanName}
                   onChange={(e) => setNewPlanName(e.target.value)}
                   placeholder="Enter plan name..."
-                  className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white focus-visible:ring-[var(--cw-teal)]"
+                  className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-[var(--cw-white)] focus-visible:ring-[var(--cw-teal)]"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') submitNewPlan()
@@ -372,10 +372,10 @@ export default function PlanBuilder() {
                 />
               </div>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsCreateModalOpen(false)} className="text-muted-foreground hover:text-white">
+                <Button variant="ghost" onClick={() => setIsCreateModalOpen(false)} className="text-muted-foreground hover:text-[var(--cw-white)]">
                   Cancel
                 </Button>
-                <Button onClick={submitNewPlan} disabled={!newPlanName.trim() || isCreating} className="bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)]">
+                <Button onClick={submitNewPlan} disabled={!newPlanName.trim() || isCreating} className="bg-[var(--cw-teal)] text-white hover:bg-[var(--cw-teal-dim)]">
                   {isCreating ? "Saving..." : "Save Plan"}
                 </Button>
               </DialogFooter>
@@ -383,7 +383,7 @@ export default function PlanBuilder() {
           </Dialog>
 
           <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
-            <DialogContent className="bg-[var(--cw-navy)] border-[var(--cw-navy-border)] text-white sm:max-w-[500px]">
+            <DialogContent className="bg-[var(--cw-navy)] border-[var(--cw-navy-border)] text-[var(--cw-white)] sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>Add Module</DialogTitle>
                 <DialogDescription className="text-slate-400">
@@ -396,7 +396,7 @@ export default function PlanBuilder() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="e.g., CS2040S or Data Structures..."
-                  className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-white focus-visible:ring-[var(--cw-teal)] flex-1"
+                  className="bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] text-[var(--cw-white)] focus-visible:ring-[var(--cw-teal)] flex-1"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') executeSearch()
                   }}
@@ -404,7 +404,7 @@ export default function PlanBuilder() {
                 <Button 
                   onClick={() => executeSearch()} 
                   disabled={isSearching}
-                  className="bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)]"
+                  className="bg-[var(--cw-teal)] text-white hover:bg-[var(--cw-teal-dim)]"
                 >
                   {isSearching ? "..." : "Search"}
                 </Button>
@@ -421,10 +421,10 @@ export default function PlanBuilder() {
                     className="flex flex-col text-left p-3 rounded-md border border-[var(--cw-navy-border)] hover:border-[var(--cw-teal)] bg-[var(--cw-navy-light)] transition-colors group"
                   >
                     <div className="flex justify-between items-center w-full">
-                      <span className="font-bold text-white group-hover:text-[var(--cw-teal)] transition-colors">
+                      <span className="font-bold text-[var(--cw-white)] group-hover:text-[var(--cw-teal)] transition-colors">
                         {mod.moduleCode}
                       </span>
-                      <span className="text-xs font-medium bg-[var(--cw-navy)] px-2 py-1 rounded text-slate-300">
+                      <span className="text-xs font-medium bg-[var(--cw-navy)] px-2 py-1 rounded text-slate-500">
                         {mod.credits} MCs
                       </span>
                     </div>
@@ -438,7 +438,7 @@ export default function PlanBuilder() {
           </Dialog>
 
           <Dialog open={isCompareModalOpen} onOpenChange={setIsCompareModalOpen}>
-          <DialogContent className="bg-[var(--cw-navy)] border-[var(--cw-navy-border)] text-white sm:max-w-[90vw] h-[85vh] flex flex-col">
+          <DialogContent className="bg-[var(--cw-navy)] border-[var(--cw-navy-border)] text-[var(--cw-white)] sm:max-w-[90vw] h-[85vh] flex flex-col">
             <DialogHeader className="flex-shrink-0">
               <DialogTitle className="text-2xl">Compare Plans</DialogTitle>
               <DialogDescription className="text-slate-400">
@@ -455,7 +455,7 @@ export default function PlanBuilder() {
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                         isSelected 
                           ? "bg-[var(--cw-teal-glow)] text-[var(--cw-teal)] border-[var(--cw-teal)]" 
-                          : "bg-[var(--cw-navy-light)] text-slate-400 border-[var(--cw-navy-border)] hover:text-white"
+                          : "bg-[var(--cw-navy-light)] text-slate-400 border-[var(--cw-navy-border)] hover:text-[var(--cw-white)]"
                       }`}
                     >
                       {p.name}
@@ -509,7 +509,7 @@ export default function PlanBuilder() {
                                 return (
                                   <div key={semKey} className="bg-[var(--cw-navy)] rounded-lg border border-dashed border-[var(--cw-navy-border)] opacity-60 flex flex-col items-center justify-center min-h-[140px]">
                                     <span className="font-bold text-xs text-slate-500 mb-1">{semTitle}</span>
-                                    <span className="text-[10px] text-slate-600">No modules planned</span>
+                                    <span className="text-[10px] text-slate-400">No modules planned</span>
                                   </div>
                                 );
                               }
@@ -517,30 +517,30 @@ export default function PlanBuilder() {
                               // Standard render
                               return (
                                 <div key={semKey} className="bg-[var(--cw-navy)] rounded-lg border border-[var(--cw-navy-border)] overflow-hidden">
-                                  <div className="bg-[rgba(0,0,0,0.2)] px-3 py-2 border-b border-[var(--cw-navy-border)] flex justify-between items-center">
-                                    <span className="font-bold text-xs text-white">
+                                  <div className="bg-[rgba(10,22,40,0.04)] px-3 py-2 border-b border-[var(--cw-navy-border)] flex justify-between items-center">
+                                    <span className="font-bold text-xs text-[var(--cw-white)]">
                                       {semTitle}
                                     </span>
                                     <div className="flex gap-2 text-[10px] text-muted-foreground">
                                       <span>{semData.totalMCs} MCs</span>
-                                      <span className={semData.totalHours > 50 ? "text-red-400" : "text-[var(--cw-teal)]"}>
+                                      <span className={semData.totalHours > 50 ? "text-red-500" : "text-[var(--cw-teal)]"}>
                                         {semData.totalHours}h
                                       </span>
                                     </div>
                                   </div>
                                   <div className="p-3">
                                     <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-                                      <div className="flex justify-between bg-[rgba(240,244,255,0.05)] rounded px-2 py-1">
-                                        <span className="text-slate-400">Lecture:</span><span className="text-white">{semData.breakdown.lecture}h</span>
+                                      <div className="flex justify-between bg-[rgba(10,22,40,0.04)] rounded px-2 py-1">
+                                        <span className="text-slate-400">Lecture:</span><span className="text-[var(--cw-white)]">{semData.breakdown.lecture}h</span>
                                       </div>
-                                      <div className="flex justify-between bg-[rgba(240,244,255,0.05)] rounded px-2 py-1">
-                                        <span className="text-slate-400">Tutorial:</span><span className="text-white">{semData.breakdown.tutorial}h</span>
+                                      <div className="flex justify-between bg-[rgba(10,22,40,0.04)] rounded px-2 py-1">
+                                        <span className="text-slate-400">Tutorial:</span><span className="text-[var(--cw-white)]">{semData.breakdown.tutorial}h</span>
                                       </div>
-                                      <div className="flex justify-between bg-[rgba(240,244,255,0.05)] rounded px-2 py-1">
-                                        <span className="text-slate-400">Lab:</span><span className="text-white">{semData.breakdown.lab}h</span>
+                                      <div className="flex justify-between bg-[rgba(10,22,40,0.04)] rounded px-2 py-1">
+                                        <span className="text-slate-400">Lab:</span><span className="text-[var(--cw-white)]">{semData.breakdown.lab}h</span>
                                       </div>
-                                      <div className="flex justify-between bg-[rgba(240,244,255,0.05)] rounded px-2 py-1">
-                                        <span className="text-slate-400">Project:</span><span className="text-white">{semData.breakdown.project}h</span>
+                                      <div className="flex justify-between bg-[rgba(10,22,40,0.04)] rounded px-2 py-1">
+                                        <span className="text-slate-400">Project:</span><span className="text-[var(--cw-white)]">{semData.breakdown.project}h</span>
                                       </div>
                                     </div>
                                   </div>
@@ -568,7 +568,7 @@ export default function PlanBuilder() {
                       <select
                         value={currentPlanId || ""}
                         onChange={handleSwitchPlan}
-                        className="bg-[var(--cw-navy-light)] border border-[var(--cw-navy-border)] text-sm rounded-md px-3 py-1.5 text-white focus:outline-none focus:ring-1 focus:ring-[var(--cw-teal)] cursor-pointer"
+                        className="bg-[var(--cw-navy-light)] border border-[var(--cw-navy-border)] text-sm rounded-md px-3 py-1.5 text-[var(--cw-white)] focus:outline-none focus:ring-1 focus:ring-[var(--cw-teal)] cursor-pointer"
                       >
                         {plans.map((p) => (
                           <option key={p.id} value={p.id}>
@@ -576,11 +576,11 @@ export default function PlanBuilder() {
                           </option>
                         ))}
                       </select>
-                      <button onClick={handleOpenCreateModal} className="text-xs bg-[var(--cw-teal-glow)] text-[var(--cw-teal)] border border border-[rgba(0,201,167,0.3)] px-3 py-1.5 rounded-md hover:bg-[rgba(0,201,167,0.25)] transition-colors font-medium">
+                      <button onClick={handleOpenCreateModal} className="text-xs bg-[var(--cw-teal-glow)] text-[var(--cw-teal)] border border border-[rgba(0,163,136,0.25)] px-3 py-1.5 rounded-md hover:bg-[rgba(0,163,136,0.18)] transition-colors font-medium">
                         + New Plan
                       </button>
                       {plans.length > 1 && (
-                        <button onClick={handleDeletePlan} className="text-xs bg-red-500/10 text-red-400 border border border-red-500/20 px-3 py-1.5 rounded-md hover:bg-red-500/20 transition-colors font-medium">
+                        <button onClick={handleDeletePlan} className="text-xs bg-red-500/10 text-red-500 border border border-red-500/20 px-3 py-1.5 rounded-md hover:bg-red-500/20 transition-colors font-medium">
                           Delete
                         </button>
                       )}
@@ -599,7 +599,7 @@ export default function PlanBuilder() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors border ${
                   plans.length < 2 
                     ? "opacity-50 cursor-not-allowed bg-[var(--cw-navy-light)] text-muted-foreground border-[var(--cw-navy-border)]"
-                    : "bg-[var(--cw-navy-light)] text-white border-[var(--cw-navy-border)] hover:bg-[var(--cw-navy-border)]"
+                    : "bg-[var(--cw-navy-light)] text-[var(--cw-white)] border-[var(--cw-navy-border)] hover:bg-[var(--cw-navy-border)]"
                 }`}
               >
                 Compare Plans
@@ -608,8 +608,8 @@ export default function PlanBuilder() {
                 onClick={() => setIsWorkloadOpen(!isWorkloadOpen)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors border ${
                   isWorkloadOpen 
-                    ? "bg-[var(--cw-teal)] text-[var(--cw-navy)] border-[var(--cw-teal)]" 
-                    : "bg-[var(--cw-navy-light)] text-white border-[var(--cw-navy-border)] hover:bg-[var(--cw-navy-border)]"
+                    ? "bg-[var(--cw-teal)] text-white border-[var(--cw-teal)]" 
+                    : "bg-[var(--cw-navy-light)] text-[var(--cw-white)] border-[var(--cw-navy-border)] hover:bg-[var(--cw-navy-border)]"
                 }`}
               >
                 <Activity size={16} />
@@ -653,7 +653,7 @@ export default function PlanBuilder() {
                     <Activity size={18} className="text-[var(--cw-teal)]" /> 
                     Workload Analysis
                   </h2>
-                  <Button variant="ghost" size="icon" onClick={() => setIsWorkloadOpen(false)} className="h-8 w-8 text-muted-foreground hover:text-white">
+                  <Button variant="ghost" size="icon" onClick={() => setIsWorkloadOpen(false)} className="h-8 w-8 text-muted-foreground hover:text-[var(--cw-white)]">
                     <X size={16} />
                   </Button>
                 </div>
@@ -677,11 +677,11 @@ export default function PlanBuilder() {
                             <div key={semKey} className="bg-[var(--cw-navy)] rounded-lg border border-[var(--cw-navy-border)] overflow-hidden">
                               
                               {/* Semester Header */}
-                              <div className="bg-[rgba(0,0,0,0.2)] px-4 py-3 border-b border-[var(--cw-navy-border)] flex justify-between items-center">
-                                <span className="font-bold text-sm tracking-wide text-white">{title}</span>
+                              <div className="bg-[rgba(10,22,40,0.04)] px-4 py-3 border-b border-[var(--cw-navy-border)] flex justify-between items-center">
+                                <span className="font-bold text-sm tracking-wide text-[var(--cw-white)]">{title}</span>
                                 <div className="flex gap-3 text-xs text-muted-foreground font-medium">
                                   <span>{semData.totalMCs} MCs</span>
-                                  <span className={semData.totalHours > 50 ? "text-red-400" : "text-[var(--cw-teal)]"}>{semData.totalHours} hrs/wk</span>
+                                  <span className={semData.totalHours > 50 ? "text-red-500" : "text-[var(--cw-teal)]"}>{semData.totalHours} hrs/wk</span>
                                 </div>
                               </div>
                               
@@ -690,7 +690,7 @@ export default function PlanBuilder() {
                                 {semData.flags && semData.flags.length > 0 && (
                                   <div className="flex flex-col gap-2 mb-1">
                                     {semData.flags.includes('overloaded') && (
-                                      <div className="flex items-center gap-2 bg-red-500/10 text-red-400 p-2 rounded border border-red-500/20 text-xs">
+                                      <div className="flex items-center gap-2 bg-red-500/10 text-red-500 p-2 rounded border border-red-500/20 text-xs">
                                         <AlertTriangle size={14} /> <strong>Overload:</strong> Heavy academic workload.
                                       </div>
                                     )}
@@ -699,25 +699,25 @@ export default function PlanBuilder() {
                                 
                                 {/* Aggregate Hours Breakdown */}
                                 <div className="grid grid-cols-2 gap-2">
-                                  <div className="flex justify-between items-center text-xs bg-[rgba(240,244,255,0.05)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)]">
+                                  <div className="flex justify-between items-center text-xs bg-[rgba(10,22,40,0.04)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)]">
                                     <span className="text-muted-foreground">Lecture:</span>
-                                    <span className="text-white font-medium">{semData.breakdown.lecture}h</span>
+                                    <span className="text-[var(--cw-white)] font-medium">{semData.breakdown.lecture}h</span>
                                   </div>
-                                  <div className="flex justify-between items-center text-xs bg-[rgba(240,244,255,0.05)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)]">
+                                  <div className="flex justify-between items-center text-xs bg-[rgba(10,22,40,0.04)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)]">
                                     <span className="text-muted-foreground">Tutorial:</span>
-                                    <span className="text-white font-medium">{semData.breakdown.tutorial}h</span>
+                                    <span className="text-[var(--cw-white)] font-medium">{semData.breakdown.tutorial}h</span>
                                   </div>
-                                  <div className="flex justify-between items-center text-xs bg-[rgba(240,244,255,0.05)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)]">
+                                  <div className="flex justify-between items-center text-xs bg-[rgba(10,22,40,0.04)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)]">
                                     <span className="text-muted-foreground">Lab:</span>
-                                    <span className="text-white font-medium">{semData.breakdown.lab}h</span>
+                                    <span className="text-[var(--cw-white)] font-medium">{semData.breakdown.lab}h</span>
                                   </div>
-                                  <div className="flex justify-between items-center text-xs bg-[rgba(240,244,255,0.05)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)]">
+                                  <div className="flex justify-between items-center text-xs bg-[rgba(10,22,40,0.04)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)]">
                                     <span className="text-muted-foreground">Project:</span>
-                                    <span className="text-white font-medium">{semData.breakdown.project}h</span>
+                                    <span className="text-[var(--cw-white)] font-medium">{semData.breakdown.project}h</span>
                                   </div>
-                                  <div className="flex justify-between items-center text-xs bg-[rgba(240,244,255,0.05)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)] col-span-2">
+                                  <div className="flex justify-between items-center text-xs bg-[rgba(10,22,40,0.04)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)] col-span-2">
                                     <span className="text-muted-foreground">Prep (Self-Study):</span>
-                                    <span className="text-white font-medium">{semData.breakdown.prep}h</span>
+                                    <span className="text-[var(--cw-white)] font-medium">{semData.breakdown.prep}h</span>
                                   </div>
                                 </div>
                               </div>

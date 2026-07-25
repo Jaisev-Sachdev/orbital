@@ -11,9 +11,9 @@ export interface Module {
 interface SemesterCardProps {
   year: number;
   semester: number;
-  modules?: Module[]; // Using ? to make it optional, though we default to [] below
+  modules?: Module[]; // Using ? to make it optional
   allModules?: string[];
-  onOpenSearch: (year: number, semester: number) => void; // Changed from onAdd
+  onOpenSearch: (year: number, semester: number) => void; 
   onRemove: (moduleCode: string) => void;
 }
 
@@ -22,7 +22,7 @@ export default function SemesterCard({
   semester, 
   modules = [], 
   allModules = [], 
-  onOpenSearch, // Use the new prop here
+  onOpenSearch,
   onRemove 
 }: SemesterCardProps) {
   
@@ -78,7 +78,7 @@ export default function SemesterCard({
 
         {/* Add Module Action */}
         <button
-          onClick={() => onOpenSearch(year, semester)} // Triggers the modal in the parent
+          onClick={() => onOpenSearch(year, semester)}
           className="mt-auto flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--cw-navy-border)] p-3 text-sm font-medium text-slate-500 hover:border-slate-600 hover:text-slate-300 transition-all"
         >
           <Plus size={16} />

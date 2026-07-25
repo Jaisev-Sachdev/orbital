@@ -30,7 +30,7 @@ export default function SemesterCard({
   const totalCredits = modules.reduce((acc, mod) => acc + (mod.credits || 4), 0);
 
   return (
-    <div className="rounded-xl border border-[var(--cw-navy-border)] bg-[var(--cw-navy-light)] text-white shadow-sm flex flex-col h-full">
+    <div className="rounded-xl border border-[var(--cw-navy-border)] bg-[var(--cw-navy-light)] text-[var(--cw-white)] shadow-sm flex flex-col h-full">
       
       {/* Card Header */}
       <div className="flex flex-col space-y-1.5 p-6 pb-4">
@@ -54,10 +54,10 @@ export default function SemesterCard({
           modules.map((mod) => (
             <div 
               key={mod.id || mod.moduleCode} 
-              className="flex items-center justify-between p-3 rounded-lg border border-[var(--cw-navy-border)] bg-[var(--cw-navy)] hover:border-slate-500 transition-all group"
+              className="flex items-center justify-between p-3 rounded-lg border border-[var(--cw-navy-border)] bg-[var(--cw-navy)] hover:border-slate-400 transition-all group"
             >
               <div className="flex flex-col">
-                <span className="font-semibold text-sm text-white">
+                <span className="font-semibold text-sm text-[var(--cw-white)]">
                   {mod.moduleCode}
                 </span>
                 <span className="text-xs text-slate-400 truncate w-48">
@@ -79,7 +79,7 @@ export default function SemesterCard({
         {/* Add Module Action */}
         <button
           onClick={() => onOpenSearch(year, semester)}
-          className="mt-auto flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--cw-navy-border)] p-3 text-sm font-medium text-slate-500 hover:border-slate-600 hover:text-slate-300 transition-all"
+          className="mt-auto flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--cw-navy-border)] p-3 text-sm font-medium text-slate-500 hover:border-slate-400 hover:text-[var(--cw-white)] transition-all"
         >
           <Plus size={16} />
           Add Module

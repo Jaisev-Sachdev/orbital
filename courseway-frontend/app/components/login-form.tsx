@@ -1,14 +1,4 @@
-/**
- * LoginForm  —  app/components/login-form.tsx
- *
- * Changes from original:
- *   - Raw fetch() → api.post() (Axios client with interceptor)
- *   - Uses auth.login() from AuthContext (consistent token key everywhere)
- *   - Stores email in localStorage for the profile greeting
- *   - Uses react-router navigate() instead of window.location.href
- *   - Courseway brand colours (navy/teal) applied via inline style + CSS vars
- *   - Fixed navigate("./..") → navigate("/")
- */
+
 
 import { useState } from "react"
 import { useNavigate, Link } from "react-router"
@@ -36,8 +26,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
     try {
       const { data } = await api.post("/auth/login", { email, password })
-
-      // auth.login() writes to localStorage AND updates AuthContext state
       login(data.token, email)
 
       navigate("/")
@@ -60,7 +48,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
         }}
       >
         <CardHeader className="text-center">
-          {/* Courseway logo mark */}
           <div className="flex items-center justify-center gap-2 mb-2">
             <img src="/logo.png" alt="Courseway" className="h-9 w-auto" />
           </div>

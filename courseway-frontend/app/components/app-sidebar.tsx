@@ -4,7 +4,6 @@ import { Link } from "react-router-dom"
 import { Button } from "~/components/ui/button"
 import { NavDocuments } from "~/components/nav-documents"
 import { NavMain } from "~/components/nav-main"
-// import { NavSecondary } from "~/components/nav-secondary" // Uncomment if needed
 import { NavUser } from "~/components/nav-user"
 import {
   Sidebar,
@@ -18,7 +17,6 @@ import {
 import { Calendar, Network, DatabaseIcon, Sparkles, Users, GraduationCap } from "lucide-react"
 import api from "~/lib/api"
 
-// Removed the hardcoded user data from here
 const data = {
   navMain: [
     {
@@ -61,14 +59,13 @@ export function AppSidebar({
   ...props 
 }: React.ComponentProps<typeof Sidebar> & { isLoggedIn?: boolean }) {
   
-  // 1. Add state to hold dynamic user data
+
   const [userData, setUserData] = useState({
     name: "Loading...",
     email: "",
-    avatar: "", // You can add a default avatar path here if you have one
+    avatar: "", 
   })
 
-  // 2. Fetch the user's details on component mount if logged in
   useEffect(() => {
     if (isLoggedIn) {
       api.get('/auth/me')
@@ -76,7 +73,6 @@ export function AppSidebar({
           if (res.data?.user) {
             const fetchedUser = res.data.user
             setUserData({
-              // If name is null/empty, fallback to "User" or the prefix of their email
               name: fetchedUser.name || "Student", 
               email: fetchedUser.email || "",
               avatar: "", 
@@ -114,7 +110,6 @@ export function AppSidebar({
       
       <SidebarFooter>
         {isLoggedIn ? (
-          // 3. Pass the fetched state into NavUser
           <NavUser user={userData} />
         ) : (
           <div className="flex flex-col gap-2 p-2">

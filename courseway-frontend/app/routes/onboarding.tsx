@@ -1,7 +1,3 @@
-/**
- * Onboarding  —  app/routes/onboarding.tsx
- */
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router"
 import { X, Loader2, Search, CheckCircle2 } from "lucide-react"
@@ -177,7 +173,7 @@ function OnboardingContent() {
       className="min-h-screen flex flex-col items-center justify-center p-4"
       style={{ backgroundColor: "var(--cw-navy)" }}
     >
-      {/* Logo */}
+
       <div className="flex items-center gap-2 mb-8">
         <img src="/logo.png" alt="Courseway" className="h-9 w-auto" />
       </div>
@@ -191,7 +187,7 @@ function OnboardingContent() {
       >
         <StepBar current={step} />
 
-        {/* ── STEP 1: Profile ── */}
+  
         {step === 1 && (
           <div className="space-y-6">
             <div>
@@ -246,7 +242,7 @@ function OnboardingContent() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* ───────────────────────────────────────────── */}
+          
 
               <div className="space-y-2">
                 <Label style={{ color: "rgba(10,22,40,0.7)" }}>Current year of study</Label>
@@ -287,7 +283,6 @@ function OnboardingContent() {
           </div>
         )}
 
-        {/* ── STEP 2: Modules ── */}
         {step === 2 && (
           <div className="space-y-6">
             <div>
@@ -323,7 +318,6 @@ function OnboardingContent() {
                 )}
               </div>
 
-              {/* Search results dropdown */}
               {searchResults.length > 0 && (
                 <div
                   className="absolute z-20 w-full mt-1 rounded-xl overflow-hidden shadow-xl"
@@ -356,7 +350,6 @@ function OnboardingContent() {
               )}
             </div>
 
-            {/* Selected modules */}
             <div>
               <p className="text-xs font-semibold mb-3" style={{ color: "rgba(10,22,40,0.55)" }}>
                 YOUR COMPLETED MODULES · {formData.modules.length}
@@ -406,7 +399,6 @@ function OnboardingContent() {
           </div>
         )}
 
-        {/* ── STEP 3: Goals ── */}
         {step === 3 && (
           <div className="space-y-6">
             <div>
@@ -421,7 +413,6 @@ function OnboardingContent() {
               </p>
             </div>
 
-            {/* Focus area quick-pick chips */}
             <div>
               <p className="text-xs font-semibold mb-2" style={{ color: "rgba(10,22,40,0.55)" }}>
                 FOCUS AREAS
@@ -484,7 +475,6 @@ function OnboardingContent() {
           </div>
         )}
 
-        {/* ── Footer buttons ── */}
         <div className="flex justify-between mt-8 gap-3">
           {step > 1 ? (
             <Button
@@ -533,7 +523,6 @@ function OnboardingContent() {
           )}
         </div>
 
-        {/* Privacy note */}
         <p className="text-center text-xs mt-4" style={{ color: "rgba(10,22,40,0.35)" }}>
           Your data stays private — used only to plan your modules.
         </p>

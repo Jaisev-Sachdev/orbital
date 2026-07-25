@@ -23,19 +23,16 @@ export default function Home() {
 
       setIsLoggedIn(true);
 
-      // Set fallback default first
       const email = localStorage.getItem("userEmail") || "";
       const namePrefix = email.split("@")[0];
       setUsername(namePrefix);
 
       try {
-        // Fetch both auth details and academic profile in parallel
         const [authRes, profileRes] = await Promise.all([
           api.get("/auth/me").catch(() => null),
           api.get("/profile").catch(() => null)
         ]);
 
-        // If the user has explicitly set a display name, use it instead
         if (authRes?.data?.user?.name) {
           setUsername(authRes.data.user.name);
         }
@@ -44,14 +41,14 @@ export default function Home() {
           setProfileData(profileRes.data.profile);
         }
       } catch {
-        // Silently fail if endpoints aren't available yet
+     
       }
     };
 
     loadUserData();
   }, []);
 
-  // ─── Logged In View (Dashboard Layout) ──────────────────────────────────────
+
   if (isLoggedIn) {
     return (
       <TooltipProvider>
@@ -95,11 +92,11 @@ export default function Home() {
     );
   }
 
-  // ─── Logged Out View (Landing Page) ─────────────────────────────────────────
+
   return (
     <div className="min-h-screen bg-[var(--cw-navy)] text-[var(--cw-white)] flex flex-col">
       
-      {/* ── Navbar ── */}
+
       <nav className="flex items-center justify-between px-6 py-4 md:px-12 border-b border-[var(--cw-navy-border)]">
         <div className="flex items-center gap-2">
           <span className="font-bold text-xl tracking-tight text-[var(--cw-white)]">
@@ -121,7 +118,6 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* ── Main Content Area ── */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
         <div className="space-y-6 max-w-3xl fade-in">
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">

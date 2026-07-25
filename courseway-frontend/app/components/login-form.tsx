@@ -62,18 +62,10 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
         <CardHeader className="text-center">
           {/* Courseway logo mark */}
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span
-              className="text-2xl font-bold"
-              style={{ color: "var(--cw-teal)" }}
-            >
-              ⌘
-            </span>
-            <span className="text-xl font-bold" style={{ color: "var(--cw-white)" }}>
-              Courseway
-            </span>
+            <img src="/logo.png" alt="Courseway" className="h-9 w-auto" />
           </div>
           <CardTitle style={{ color: "var(--cw-white)" }}>Welcome back</CardTitle>
-          <CardDescription style={{ color: "rgba(240,244,255,0.5)" }}>
+          <CardDescription style={{ color: "rgba(10,22,40,0.55)" }}>
             Log in to continue planning your degree
           </CardDescription>
         </CardHeader>
@@ -82,7 +74,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
           <form onSubmit={handleLogin} className="space-y-4">
 
             <div className="space-y-2">
-              <Label htmlFor="email" style={{ color: "rgba(240,244,255,0.8)" }}>
+              <Label htmlFor="email" style={{ color: "rgba(10,22,40,0.8)" }}>
                 Email
               </Label>
               <Input
@@ -101,7 +93,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" style={{ color: "rgba(240,244,255,0.8)" }}>
+              <Label htmlFor="password" style={{ color: "rgba(10,22,40,0.8)" }}>
                 Password
               </Label>
               <Input
@@ -122,9 +114,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
               <p
                 className="text-sm px-3 py-2 rounded"
                 style={{
-                  color: "#FF4D4F",
-                  backgroundColor: "rgba(255,77,79,0.08)",
-                  border: "1px solid rgba(255,77,79,0.2)",
+                  color: "#E11D2E",
+                  backgroundColor: "rgba(225,29,46,0.06)",
+                  border: "1px solid rgba(225,29,46,0.2)",
                 }}
               >
                 {errorMessage}
@@ -137,13 +129,13 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
               className="w-full font-semibold"
               style={{
                 backgroundColor: "var(--cw-teal)",
-                color: "var(--cw-navy)",
+                color: "#FFFFFF",
               }}
             >
               {isLoading ? "Logging in…" : "Log in"}
             </Button>
 
-            <p className="text-center text-sm" style={{ color: "rgba(240,244,255,0.5)" }}>
+            <p className="text-center text-sm" style={{ color: "rgba(10,22,40,0.55)" }}>
               Don't have an account?{" "}
               <Link
                 to="/signup"

@@ -123,7 +123,7 @@ export default function PrerequisitesPage() {
               {/* ── Header ── */}
               <div className="mb-10">
                 <h1 className="text-3xl font-bold mb-2">Prerequisite Checker</h1>
-                <p style={{ color: 'rgba(240,244,255,0.6)' }}>
+                <p style={{ color: 'rgba(10,22,40,0.6)' }}>
                   Enter a module code to see its full prerequisite tree. Click any module chip to expand its own prerequisites.
                 </p>
               </div>
@@ -133,7 +133,7 @@ export default function PrerequisitesPage() {
                 <div className="relative flex-1">
                   <Search
                     className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
-                    style={{ color: 'rgba(240,244,255,0.4)' }}
+                    style={{ color: 'rgba(10,22,40,0.4)' }}
                   />
                   <Input
                     value={query}
@@ -153,7 +153,7 @@ export default function PrerequisitesPage() {
                   disabled={isLoading || !query.trim()}
                   style={{
                     backgroundColor: 'var(--cw-teal)',
-                    color: 'var(--cw-navy)',
+                    color: '#FFFFFF',
                     fontWeight: 600,
                   }}
                 >
@@ -164,7 +164,7 @@ export default function PrerequisitesPage() {
               {/* ── Recent searches ── */}
               {searchHistory.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap mb-8">
-                  <span className="text-xs" style={{ color: 'rgba(240,244,255,0.4)' }}>
+                  <span className="text-xs" style={{ color: 'rgba(10,22,40,0.4)' }}>
                     Recent:
                   </span>
                   {searchHistory.map(code => (
@@ -190,7 +190,7 @@ export default function PrerequisitesPage() {
                     className="h-5 w-5 animate-spin"
                     style={{ color: 'var(--cw-teal)' }}
                   />
-                  <span style={{ color: 'rgba(240,244,255,0.6)' }}>Mapping tree for {query}…</span>
+                  <span style={{ color: 'rgba(10,22,40,0.6)' }}>Mapping tree for {query}…</span>
                 </div>
               )}
 
@@ -199,12 +199,12 @@ export default function PrerequisitesPage() {
                 <div
                   className="rounded-xl p-5 flex items-start gap-3"
                   style={{
-                    backgroundColor: 'rgba(255,77,79,0.08)',
-                    border: '1px solid rgba(255,77,79,0.25)',
+                    backgroundColor: 'rgba(225,29,46,0.06)',
+                    border: '1px solid rgba(225,29,46,0.2)',
                   }}
                 >
-                  <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" style={{ color: '#FF4D4F' }} />
-                  <p className="text-sm" style={{ color: 'rgba(240,244,255,0.8)' }}>{error}</p>
+                  <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" style={{ color: '#E11D2E' }} />
+                  <p className="text-sm" style={{ color: 'rgba(10,22,40,0.8)' }}>{error}</p>
                 </div>
               )}
 
@@ -227,19 +227,19 @@ export default function PrerequisitesPage() {
                           style={{
                             backgroundColor: 'var(--cw-teal-glow)',
                             color: 'var(--cw-teal)',
-                            border: '1px solid rgba(0,201,167,0.25)',
+                            border: '1px solid rgba(0,163,136,0.25)',
                           }}
                         >
                           {moduleDetail.moduleCode}
                         </span>
                         <h2 className="text-xl font-semibold mt-2 mb-1">{moduleDetail.title}</h2>
-                        <p className="text-sm" style={{ color: 'rgba(240,244,255,0.5)' }}>
+                        <p className="text-sm" style={{ color: 'rgba(10,22,40,0.55)' }}>
                           {moduleDetail.credits} MCs
                         </p>
                       </div>
                       <BookOpen
                         className="h-5 w-5 shrink-0 mt-1"
-                        style={{ color: 'rgba(240,244,255,0.3)' }}
+                        style={{ color: 'rgba(10,22,40,0.3)' }}
                       />
                     </div>
                   </div>
@@ -258,7 +258,7 @@ export default function PrerequisitesPage() {
                         style={{ color: 'var(--cw-teal)' }}
                       />
                       Prerequisite Tree
-                      <span className="text-xs font-normal ml-1" style={{ color: 'rgba(240,244,255,0.4)' }}>
+                      <span className="text-xs font-normal ml-1" style={{ color: 'rgba(10,22,40,0.4)' }}>
                         — click a module chip to expand its prerequisites
                       </span>
                     </h3>
@@ -276,7 +276,7 @@ export default function PrerequisitesPage() {
                           <p className="font-medium" style={{ color: 'var(--cw-teal)' }}>
                             No prerequisites
                           </p>
-                          <p className="text-sm" style={{ color: 'rgba(240,244,255,0.5)' }}>
+                          <p className="text-sm" style={{ color: 'rgba(10,22,40,0.55)' }}>
                             Anyone can take this module.
                           </p>
                         </div>
@@ -284,7 +284,7 @@ export default function PrerequisitesPage() {
                     ) : (
                       /* Tree Render */
                       <div className="text-sm">
-                        <p className="mb-4" style={{ color: 'rgba(240,244,255,0.5)' }}>
+                        <p className="mb-4" style={{ color: 'rgba(10,22,40,0.55)' }}>
                           You must satisfy the following conditions before taking {moduleDetail.moduleCode}:
                         </p>
                        
@@ -300,10 +300,10 @@ export default function PrerequisitesPage() {
                         className="mt-6 pt-4 text-sm"
                         style={{
                           borderTop: '1px solid var(--cw-navy-border)',
-                          color: 'rgba(240,244,255,0.45)',
+                          color: 'rgba(10,22,40,0.5)',
                         }}
                       >
-                        <span className="font-medium" style={{ color: 'rgba(240,244,255,0.6)' }}>
+                        <span className="font-medium" style={{ color: 'rgba(10,22,40,0.65)' }}>
                           Raw condition text:{' '}
                         </span>
                         {treeResult.prerequisiteText}
@@ -324,7 +324,7 @@ export default function PrerequisitesPage() {
                       }}
                       style={{
                         borderColor: 'var(--cw-navy-border)',
-                        color: 'rgba(240,244,255,0.7)',
+                        color: 'rgba(10,22,40,0.7)',
                         backgroundColor: 'transparent',
                       }}
                     >
@@ -335,7 +335,7 @@ export default function PrerequisitesPage() {
                       onClick={() => window.location.href = '/recommendations'}
                       style={{
                         backgroundColor: 'var(--cw-teal)',
-                        color: 'var(--cw-navy)',
+                        color: '#FFFFFF',
                         fontWeight: 600,
                       }}
                     >
@@ -356,12 +356,12 @@ export default function PrerequisitesPage() {
                 >
                   <Search
                     className="h-8 w-8 mx-auto mb-3"
-                    style={{ color: 'rgba(240,244,255,0.2)' }}
+                    style={{ color: 'rgba(10,22,40,0.2)' }}
                   />
-                  <p style={{ color: 'rgba(240,244,255,0.4)' }}>
+                  <p style={{ color: 'rgba(10,22,40,0.4)' }}>
                     Enter a module code above to map its requirement tree.
                   </p>
-                  <p className="text-sm mt-2" style={{ color: 'rgba(240,244,255,0.25)' }}>
+                  <p className="text-sm mt-2" style={{ color: 'rgba(10,22,40,0.3)' }}>
                     Try CS2040S, CS2030S, or MA1521
                   </p>
                 </div>

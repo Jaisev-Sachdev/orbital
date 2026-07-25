@@ -2,13 +2,15 @@
  * Courseway — app.css
  *
  * Replaces shadcn's default light/grey tokens with the Courseway brand:
- *   Navy    #0A1628  — backgrounds
+ *   Navy    #0A1628  — text / dark accents
  *   Teal    #00C9A7  — accent / interactive
- *   White   #F0F4FF  — text
+ *   White   #FFFFFF  — backgrounds
  *   Amber   #FFB347  — warnings only
  *
- * We permanently set dark mode (no system-preference toggle needed for now).
- * shadcn components read from these CSS vars — so swapping them here
+ * Light mode: --cw-navy now maps to the page background token, and
+ * --cw-white maps to foreground text — the variable names are kept as-is
+ * to avoid touching every component that references them.
+ * shadcn components read from these CSS vars — so swapping the values here
  * re-skins everything automatically.
  */
 
@@ -63,21 +65,21 @@
   --radius-2xl: calc(var(--radius) * 1.8);
 }
 
-/* ── Courseway brand tokens (dark-only) ── */
+/* ── Courseway brand tokens (light mode) ── */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Core palette */
-  --cw-navy:   #0A1628;
-  --cw-teal:   #00C9A7;
-  --cw-white:  #F0F4FF;
-  --cw-amber:  #FFB347;
+  /* Core palette — names unchanged, values flipped for light mode */
+  --cw-navy:   #FFFFFF;   /* was dark background, now the light background */
+  --cw-teal:   #00A388;   /* slightly deepened for contrast on white */
+  --cw-white:  #0A1628;   /* was light text, now the dark foreground text */
+  --cw-amber:  #B8720A;   /* deepened for contrast on white */
 
   /* Derived shades */
-  --cw-navy-light:  #0F2040;   /* cards, elevated surfaces */
-  --cw-navy-border: #1A2E4A;   /* subtle borders */
-  --cw-teal-dim:    #00A388;   /* teal hover */
-  --cw-teal-glow:   rgba(0, 201, 167, 0.15); /* teal bg tint */
+  --cw-navy-light:  #F7F9FC;   /* cards, elevated surfaces */
+  --cw-navy-border: #E2E8F0;   /* subtle borders */
+  --cw-teal-dim:    #00C9A7;   /* teal hover (brighter than base on light bg) */
+  --cw-teal-glow:   rgba(0, 163, 136, 0.10); /* teal bg tint */
 
   /* shadcn semantic tokens → Courseway palette */
   --background:          var(--cw-navy);
@@ -91,18 +93,18 @@
 
   /* PRIMARY = teal (buttons, links, badges) */
   --primary:             var(--cw-teal);
-  --primary-foreground:  var(--cw-navy);
+  --primary-foreground:  #FFFFFF;
 
   --secondary:           var(--cw-navy-light);
   --secondary-foreground:var(--cw-white);
 
   --muted:               var(--cw-navy-light);
-  --muted-foreground:    rgba(240, 244, 255, 0.5);
+  --muted-foreground:    rgba(10, 22, 40, 0.55);
 
   --accent:              var(--cw-teal-glow);
   --accent-foreground:   var(--cw-teal);
 
-  --destructive:         #FF4D4F;
+  --destructive:         #E11D2E;
 
   --border:              var(--cw-navy-border);
   --input:               var(--cw-navy-border);
@@ -110,11 +112,11 @@
 
   --radius: 0.625rem;
 
-  /* Sidebar — slightly lighter than background */
-  --sidebar:                    #0D1D35;
+  /* Sidebar — subtly distinct from background */
+  --sidebar:                    #F7F9FC;
   --sidebar-foreground:         var(--cw-white);
   --sidebar-primary:            var(--cw-teal);
-  --sidebar-primary-foreground: var(--cw-navy);
+  --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent:             var(--cw-navy-light);
   --sidebar-accent-foreground:  var(--cw-white);
   --sidebar-border:             var(--cw-navy-border);
@@ -155,7 +157,7 @@ body {
   align-items: center;
   gap: 0.375rem;
   background: var(--cw-teal-glow);
-  border: 1px solid rgba(0, 201, 167, 0.3);
+  border: 1px solid rgba(0, 163, 136, 0.25);
   color: var(--cw-teal);
   border-radius: 9999px;
   padding: 0.25rem 0.75rem;
@@ -166,8 +168,8 @@ body {
 }
 
 .module-chip:hover {
-  background: rgba(0, 201, 167, 0.25);
-  border-color: rgba(0, 201, 167, 0.5);
+  background: rgba(0, 163, 136, 0.18);
+  border-color: rgba(0, 163, 136, 0.4);
 }
 
 /* Step progress bar — used in onboarding */
@@ -183,17 +185,17 @@ body {
   background: var(--cw-teal);
 }
 
-/* Subtle card glow on hover */
+/* Subtle card highlight on hover */
 .card-hover {
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .card-hover:hover {
-  border-color: rgba(0, 201, 167, 0.4);
-  box-shadow: 0 0 0 1px rgba(0, 201, 167, 0.15), 0 4px 20px rgba(0, 0, 0, 0.3);
+  border-color: rgba(0, 163, 136, 0.35);
+  box-shadow: 0 0 0 1px rgba(0, 163, 136, 0.12), 0 4px 16px rgba(10, 22, 40, 0.06);
 }
 
 /* Warning/amber — use sparingly */
 .text-warning { color: var(--cw-amber); }
-.bg-warning    { background: rgba(255, 179, 71, 0.15); }
-.border-warning{ border-color: rgba(255, 179, 71, 0.4); }
+.bg-warning    { background: rgba(184, 114, 10, 0.10); }
+.border-warning{ border-color: rgba(184, 114, 10, 0.35); }

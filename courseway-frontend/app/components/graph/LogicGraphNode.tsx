@@ -24,11 +24,11 @@ export const LogicGraphNode = ({ data }: { data: { label: string, n?: number, te
   }
 
   return (
-    <div className="px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-[var(--cw-navy-border)] bg-[rgba(240,244,255,0.05)] shadow-md max-w-[150px]">
+    <div className="px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-[var(--cw-navy-border)] bg-[rgba(10,22,40,0.04)] shadow-md max-w-[150px]">
       <Handle type="target" position={Position.Top} className="!opacity-0" />
       
-      <Icon className="h-3 w-3 text-white/60 shrink-0" />
-      <span className="text-[10px] font-bold tracking-wider text-white/60 truncate">
+      <Icon className="h-3 w-3 text-slate-500 shrink-0" />
+      <span className="text-[10px] font-bold tracking-wider text-slate-500 truncate">
         {displayLabel}
       </span>
 

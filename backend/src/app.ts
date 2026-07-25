@@ -6,7 +6,7 @@ import moduleRoutes from './routes/modules';
 import recommendationRoutes from './routes/recommendations';
 import planRoutes from './routes/plans';
 
-// Express app is defined separately from the listener
+// express app is defined separately from the listener
 const app = express();
 
 app.use(cors());

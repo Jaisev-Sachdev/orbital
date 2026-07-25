@@ -40,7 +40,7 @@ function StepBar({ current }: { current: number }) {
                 style={{
                   backgroundColor: done || active ? "var(--cw-teal)" : "var(--cw-navy-light)",
                   border: done || active ? "none" : "1px solid var(--cw-navy-border)",
-                  color: done || active ? "var(--cw-navy)" : "rgba(240,244,255,0.4)",
+                  color: done || active ? "#FFFFFF" : "rgba(10,22,40,0.4)",
                 }}
               >
                 {done ? <CheckCircle2 className="h-4 w-4" /> : num}
@@ -51,8 +51,8 @@ function StepBar({ current }: { current: number }) {
                   color: active
                     ? "var(--cw-teal)"
                     : done
-                    ? "rgba(240,244,255,0.7)"
-                    : "rgba(240,244,255,0.35)",
+                    ? "rgba(10,22,40,0.7)"
+                    : "rgba(10,22,40,0.35)",
                 }}
               >
                 {label}
@@ -201,14 +201,14 @@ function OnboardingContent() {
               <h2 className="text-2xl font-bold mb-1" style={{ color: "var(--cw-white)" }}>
                 Let's build your degree plan.
               </h2>
-              <p style={{ color: "rgba(240,244,255,0.5)", fontSize: "0.9rem" }}>
+              <p style={{ color: "rgba(10,22,40,0.55)", fontSize: "0.9rem" }}>
                 Tell us where you are in your NUS journey. You can change any of this later.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label style={{ color: "rgba(240,244,255,0.7)" }}>Faculty</Label>
+                <Label style={{ color: "rgba(10,22,40,0.7)" }}>Faculty</Label>
                 <Select
                   value={formData.faculty}
                   onValueChange={val => handleSelectChange(val, "faculty")}
@@ -229,7 +229,7 @@ function OnboardingContent() {
               </div>
 
               <div className="space-y-2">
-                <Label style={{ color: "rgba(240,244,255,0.7)" }}>Major <span>{`(Primary Major Only)`}</span></Label>
+                <Label style={{ color: "rgba(10,22,40,0.7)" }}>Major <span>{`(Primary Major Only)`}</span></Label>
                 <Select
                   value={formData.major}
                   onValueChange={val => handleSelectChange(val, "major")}
@@ -249,7 +249,7 @@ function OnboardingContent() {
               {/* ───────────────────────────────────────────── */}
 
               <div className="space-y-2">
-                <Label style={{ color: "rgba(240,244,255,0.7)" }}>Current year of study</Label>
+                <Label style={{ color: "rgba(10,22,40,0.7)" }}>Current year of study</Label>
                 <Select
                   value={formData.year}
                   onValueChange={val => handleSelectChange(val, "year")}
@@ -267,7 +267,7 @@ function OnboardingContent() {
               </div>
 
               <div className="space-y-2">
-                <Label style={{ color: "rgba(240,244,255,0.7)" }}>Cohort / curriculum year</Label>
+                <Label style={{ color: "rgba(10,22,40,0.7)" }}>Cohort / curriculum year</Label>
                 <Select
                   value={formData.cohortYear}
                   onValueChange={val => handleSelectChange(val, "cohortYear")}
@@ -297,7 +297,7 @@ function OnboardingContent() {
               <h2 className="text-2xl font-bold mb-1" style={{ color: "var(--cw-white)" }}>
                 Which modules have you completed?
               </h2>
-              <p style={{ color: "rgba(240,244,255,0.5)", fontSize: "0.9rem" }}>
+              <p style={{ color: "rgba(10,22,40,0.55)", fontSize: "0.9rem" }}>
                 Tap to add. We'll use these to find what you're eligible for.
               </p>
             </div>
@@ -306,7 +306,7 @@ function OnboardingContent() {
               <div className="relative">
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
-                  style={{ color: "rgba(240,244,255,0.35)" }}
+                  style={{ color: "rgba(10,22,40,0.35)" }}
                 />
                 <Input
                   value={moduleSearch}
@@ -344,10 +344,10 @@ function OnboardingContent() {
                       >
                         {mod.moduleCode}
                       </span>
-                      <span className="text-sm truncate" style={{ color: "rgba(240,244,255,0.8)" }}>
+                      <span className="text-sm truncate" style={{ color: "rgba(10,22,40,0.8)" }}>
                         {mod.title}
                       </span>
-                      <span className="text-xs shrink-0" style={{ color: "rgba(240,244,255,0.35)" }}>
+                      <span className="text-xs shrink-0" style={{ color: "rgba(10,22,40,0.35)" }}>
                         {mod.credits} MC
                       </span>
                     </div>
@@ -358,7 +358,7 @@ function OnboardingContent() {
 
             {/* Selected modules */}
             <div>
-              <p className="text-xs font-semibold mb-3" style={{ color: "rgba(240,244,255,0.5)" }}>
+              <p className="text-xs font-semibold mb-3" style={{ color: "rgba(10,22,40,0.55)" }}>
                 YOUR COMPLETED MODULES · {formData.modules.length}
               </p>
               {formData.modules.length === 0 ? (
@@ -366,7 +366,7 @@ function OnboardingContent() {
                   className="rounded-xl p-6 text-center text-sm"
                   style={{
                     border: "1px dashed var(--cw-navy-border)",
-                    color: "rgba(240,244,255,0.3)",
+                    color: "rgba(10,22,40,0.35)",
                   }}
                 >
                   No modules added yet — search above to add them.
@@ -379,7 +379,7 @@ function OnboardingContent() {
                       className="flex items-center gap-1.5"
                       style={{
                         backgroundColor: "var(--cw-teal-glow)",
-                        border: "1px solid rgba(0,201,167,0.3)",
+                        border: "1px solid rgba(0,163,136,0.25)",
                         color: "var(--cw-teal)",
                         borderRadius: "9999px",
                         padding: "0.25rem 0.5rem 0.25rem 0.75rem",
@@ -392,9 +392,9 @@ function OnboardingContent() {
                       <button
                         onClick={() => removeModule(code)}
                         className="rounded-full p-0.5 transition-colors"
-                        style={{ color: "rgba(0,201,167,0.7)" }}
+                        style={{ color: "rgba(0,163,136,0.7)" }}
                         onMouseEnter={e => (e.currentTarget.style.color = "var(--cw-teal)")}
-                        onMouseLeave={e => (e.currentTarget.style.color = "rgba(0,201,167,0.7)")}
+                        onMouseLeave={e => (e.currentTarget.style.color = "rgba(0,163,136,0.7)")}
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -416,14 +416,14 @@ function OnboardingContent() {
               <h2 className="text-2xl font-bold mb-1" style={{ color: "var(--cw-white)" }}>
                 Any goals or focus areas?
               </h2>
-              <p style={{ color: "rgba(240,244,255,0.5)", fontSize: "0.9rem" }}>
+              <p style={{ color: "rgba(10,22,40,0.55)", fontSize: "0.9rem" }}>
                 The AI will weight recommendations toward these. You can skip — pick what fits.
               </p>
             </div>
 
             {/* Focus area quick-pick chips */}
             <div>
-              <p className="text-xs font-semibold mb-2" style={{ color: "rgba(240,244,255,0.5)" }}>
+              <p className="text-xs font-semibold mb-2" style={{ color: "rgba(10,22,40,0.55)" }}>
                 FOCUS AREAS
               </p>
               {[
@@ -440,7 +440,7 @@ function OnboardingContent() {
                     style={{
                       backgroundColor: isSelected ? "var(--cw-teal)" : "var(--cw-navy)",
                       border: isSelected ? "1px solid var(--cw-teal)" : "1px solid var(--cw-navy-border)",
-                      color: isSelected ? "var(--cw-navy)" : "rgba(240,244,255,0.7)",
+                      color: isSelected ? "#FFFFFF" : "rgba(10,22,40,0.7)",
                     }}
                     onClick={() => {
                       const current = formData.goals
@@ -457,7 +457,7 @@ function OnboardingContent() {
             </div>
 
             <div className="space-y-2">
-              <Label style={{ color: "rgba(240,244,255,0.7)" }}>
+              <Label style={{ color: "rgba(10,22,40,0.7)" }}>
                 Anything else we should know? (optional)
               </Label>
               <Textarea
@@ -473,9 +473,9 @@ function OnboardingContent() {
               <div
                 className="text-sm px-4 py-3 rounded-xl"
                 style={{
-                  color: "#FF4D4F",
-                  backgroundColor: "rgba(255,77,79,0.08)",
-                  border: "1px solid rgba(255,77,79,0.2)",
+                  color: "#E11D2E",
+                  backgroundColor: "rgba(225,29,46,0.06)",
+                  border: "1px solid rgba(225,29,46,0.2)",
                 }}
               >
                 {errorMessage}
@@ -494,7 +494,7 @@ function OnboardingContent() {
               style={{
                 backgroundColor: "transparent",
                 borderColor: "var(--cw-navy-border)",
-                color: "rgba(240,244,255,0.7)",
+                color: "rgba(10,22,40,0.7)",
               }}
             >
               ← Back
@@ -509,7 +509,7 @@ function OnboardingContent() {
               disabled={step === 1 && !canProceedStep1}
               style={{
                 backgroundColor: "var(--cw-teal)",
-                color: "var(--cw-navy)",
+                color: "#FFFFFF",
                 fontWeight: 600,
                 opacity: step === 1 && !canProceedStep1 ? 0.5 : 1,
               }}
@@ -520,7 +520,7 @@ function OnboardingContent() {
             <Button
               onClick={handleFinish}
               disabled={isLoading}
-              style={{ backgroundColor: "var(--cw-teal)", color: "var(--cw-navy)", fontWeight: 600 }}
+              style={{ backgroundColor: "var(--cw-teal)", color: "#FFFFFF", fontWeight: 600 }}
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
@@ -534,7 +534,7 @@ function OnboardingContent() {
         </div>
 
         {/* Privacy note */}
-        <p className="text-center text-xs mt-4" style={{ color: "rgba(240,244,255,0.25)" }}>
+        <p className="text-center text-xs mt-4" style={{ color: "rgba(10,22,40,0.35)" }}>
           Your data stays private — used only to plan your modules.
         </p>
       </div>

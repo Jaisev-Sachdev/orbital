@@ -10,7 +10,7 @@ export const ModuleGraphNode = ({ data }: { data: { code: string, title?: string
       <div className="flex flex-col items-center">
         <span className="font-bold text-[var(--cw-teal)]">{data.code}</span>
         {data.title && (
-          <span className="text-xs text-white/60 text-center truncate w-full mt-1">
+          <span className="text-xs text-slate-500 text-center truncate w-full mt-1">
             {data.title}
           </span>
         )}

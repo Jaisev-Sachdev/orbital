@@ -1,9 +1,7 @@
 import { classifyModule, computeRequirementsProgress } from '../src/lib/gradRequirementsEngine';
 import gradRequirements from '../src/config/gradRequirements.json';
 
-// Regression tests for the 3 bugs Qi Zao reported against the graduation
-// planner: CS1010S not recognised as equivalent to CS1101S, and CS2030/
-// CS2040 (non-S track) being misclassified into the wrong MC bucket.
+// regression tests for the 3 bugs reported against the graduation planner
 describe('gradRequirementsEngine', () => {
   const plannedModules = [
     { moduleCode: 'CS1010S', credits: 4 },

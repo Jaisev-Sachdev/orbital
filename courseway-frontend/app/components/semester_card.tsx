@@ -38,8 +38,8 @@ export default function SemesterCard({
           <h3 className="font-semibold leading-none tracking-tight text-lg">
             {semesterTitle}
           </h3>
-          <span className="text-xs font-medium text-[var(--cw-navy)] bg-[var(--cw-teal)] px-2.5 py-1 rounded-md">
-            {totalCredits} MCs
+          <span className="text-xs font-medium text-slate-400 bg-transparent border border-[var(--cw-navy-border)] px-2.5 py-1 rounded-md">
+            {totalCredits}/{24} MCs
           </span>
         </div>
       </div>
@@ -79,7 +79,7 @@ export default function SemesterCard({
         {/* Add Module Action */}
         <button
           onClick={() => onOpenSearch(year, semester)} // Triggers the modal in the parent
-          className="mt-auto flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--cw-navy-border)] p-3 text-sm font-medium text-slate-400 hover:border-slate-500 hover:text-white transition-all"
+          className="mt-auto flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--cw-navy-border)] p-3 text-sm font-medium text-slate-500 hover:border-slate-600 hover:text-slate-300 transition-all"
         >
           <Plus size={16} />
           Add Module

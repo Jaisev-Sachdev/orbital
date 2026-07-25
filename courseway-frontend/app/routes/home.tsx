@@ -126,7 +126,7 @@ export default function Home() {
         <div className="space-y-6 max-w-3xl fade-in">
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
             Master your <br />
-            <span className="text-[var(--cw-teal)] drop-shadow-[0_0_15px_rgba(0,201,167,0.3)]">
+            <span className="text-[var(--cw-teal)]">
               academic journey.
             </span>
           </h1>
@@ -137,7 +137,7 @@ export default function Home() {
           
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
             <Link to="/signup">
-              <Button size="lg" className="h-12 px-8 bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)] text-base font-bold shadow-lg shadow-[var(--cw-teal-glow)] transition-all hover:scale-105">
+              <Button size="lg" className="h-12 px-8 bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)] text-base font-bold transition-all">
                 Get Started for Free
               </Button>
             </Link>

@@ -56,49 +56,43 @@ interface RequirementsResponse {
   fourYearRecommendation: FourYearRecommendation
 }
 
-// --- New Category Card Component with Dropdown Logic ---
-const CategoryCard = ({ category }: { category: Category }) => {
+// --- Category row: flat list item, not a boxed card ---
+const CategoryCard = ({ category, isLast }: { category: Category; isLast: boolean }) => {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div 
-      className={`p-4 rounded-lg border transition-all duration-200 ${
-        category.satisfied 
-          ? "bg-[rgba(0,163,136,0.05)] border-[rgba(0,163,136,0.3)]" 
-          : "bg-[var(--cw-navy-light)] border-[var(--cw-navy-border)] hover:border-slate-400"
-      }`}
-    >
+    <div className={isLast ? "" : "border-b border-[var(--cw-navy-border)]"}>
       {/* Header (Clickable) */}
       <div 
-        className="flex justify-between items-center cursor-pointer select-none"
+        className="flex justify-between items-center cursor-pointer select-none py-3.5"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <h3 className="font-semibold text-[var(--cw-white)] flex items-center gap-2">
+        <h3 className="font-medium text-[var(--cw-white)] flex items-center gap-2.5 text-sm">
           {category.satisfied ? (
-            <CheckCircle2 size={18} className="text-[var(--cw-teal)] flex-shrink-0" />
+            <CheckCircle2 size={16} className="text-[var(--cw-teal)] flex-shrink-0" />
           ) : (
-            <Circle size={18} className="text-slate-400 flex-shrink-0" />
+            <Circle size={16} className="text-slate-300 flex-shrink-0" />
           )}
           {category.label}
         </h3>
         
         <div className="flex items-center gap-3">
           {category.type === "mc_total" && (
-            <span className={`text-xs font-medium px-2 py-1 rounded bg-[var(--cw-navy)] ${
+            <span className={`text-xs font-medium ${
               category.satisfied ? "text-[var(--cw-teal)]" : "text-slate-400"
             }`}>
               {category.mcsPlanned} / {category.mcsRequired} MCs
             </span>
           )}
-          {isOpen ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+          {isOpen ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
         </div>
       </div>
 
       {/* Render MC Totals Progress Bar (Always visible if mc_total) */}
       {category.type === "mc_total" && (
-        <div className="w-full bg-[var(--cw-navy)] rounded-full h-1.5 mt-3">
+        <div className="w-full bg-[var(--cw-navy-border)] rounded-full h-1 -mt-1 mb-3">
           <div 
-            className="bg-[var(--cw-teal)] h-1.5 rounded-full" 
+            className="bg-[var(--cw-teal)] h-1 rounded-full" 
             style={{ width: `${Math.min(((category.mcsPlanned || 0) / (category.mcsRequired || 1)) * 100, 100)}%` }}
           ></div>
         </div>
@@ -106,29 +100,27 @@ const CategoryCard = ({ category }: { category: Category }) => {
 
       {/* Dropdown Content */}
       {isOpen && (
-        <div className="mt-4 pt-4 border-t border-[var(--cw-navy-border)] animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="pb-4 pl-6 animate-in fade-in slide-in-from-top-2 duration-200">
           
           {/* Notes section */}
           {category.notes && (
-            <div className="mb-4 bg-[rgba(10,22,40,0.03)] p-3 rounded-md border border-[rgba(10,22,40,0.08)]">
-              <p className="text-sm text-slate-500 leading-relaxed text-justify">
-                {category.notes}
-              </p>
-            </div>
+            <p className="text-sm text-slate-500 leading-relaxed mb-3">
+              {category.notes}
+            </p>
           )}
 
           {/* Module Lists */}
           {category.type === "module_list" && (
             <div className="flex flex-col gap-4">
               {category.minRequired && (
-                <div className="text-xs text-[var(--cw-teal)] font-semibold bg-[var(--cw-teal-glow)] inline-block px-2 py-1 rounded w-max">
-                  Requirements: Complete at least {category.minRequired} module(s) from this list.
-                </div>
+                <p className="text-xs text-slate-500">
+                  Complete at least <span className="font-medium text-[var(--cw-teal)]">{category.minRequired}</span> module(s) from this list.
+                </p>
               )}
               
               {/* Taken Modules */}
               <div>
-                <h4 className="text-xs text-slate-400 uppercase font-bold mb-2 tracking-wider">
+                <h4 className="text-xs text-slate-400 uppercase font-semibold mb-2 tracking-wider">
                   Completed / Planned ({category.taken?.length || 0})
                 </h4>
                 <div className="flex flex-wrap gap-2">
@@ -146,13 +138,13 @@ const CategoryCard = ({ category }: { category: Category }) => {
               
               {/* Missing Modules */}
               <div>
-                <h4 className="text-xs text-slate-400 uppercase font-bold mb-2 tracking-wider">
+                <h4 className="text-xs text-slate-400 uppercase font-semibold mb-2 tracking-wider">
                   Missing / Available Options ({category.missing?.length || 0})
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {category.missing && category.missing.length > 0 ? (
                     category.missing.map(code => (
-                      <span key={code} className="module-chip opacity-60 border-slate-400 text-slate-400 hover:opacity-100 hover:border-slate-500">
+                      <span key={code} className="module-chip opacity-60 border-slate-300 text-slate-400 hover:opacity-100 hover:border-slate-400">
                         {code}
                       </span>
                     ))
@@ -273,10 +265,8 @@ export default function GraduationRequirements() {
               Analyzing degree requirements...
             </div>
           ) : error ? (
-            <div className="max-w-md mx-auto mt-16 bg-[var(--cw-navy-light)] border border-[rgba(184,114,10,0.3)] rounded-lg p-8 flex flex-col items-center text-center gap-4">
-              <div className="bg-[rgba(184,114,10,0.1)] p-3 rounded-full text-warning">
-                <Info size={28} />
-              </div>
+            <div className="max-w-md mx-auto mt-16 flex flex-col items-center text-center gap-3">
+              <Info size={24} className="text-warning" />
               <div>
                 <h3 className="text-lg font-bold text-[var(--cw-white)] mb-2">Not Yet Supported</h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
@@ -286,16 +276,16 @@ export default function GraduationRequirements() {
             </div>
           ) : reqData ? (
             <div className="max-w-6xl mx-auto flex flex-col gap-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-[var(--cw-navy-light)] border border-[var(--cw-navy-border)] p-5 rounded-lg flex flex-col gap-1">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[var(--cw-navy-border)] rounded-lg overflow-hidden border border-[var(--cw-navy-border)]">
+                <div className="bg-[var(--cw-navy)] p-5 flex flex-col gap-1">
                   <span className="text-sm text-slate-400">Programme</span>
                   <span className="text-lg font-bold text-[var(--cw-white)]">{reqData.programme}</span>
                 </div>
-                <div className="bg-[var(--cw-navy-light)] border border-[var(--cw-navy-border)] p-5 rounded-lg flex flex-col gap-1">
+                <div className="bg-[var(--cw-navy)] p-5 flex flex-col gap-1">
                   <span className="text-sm text-slate-400">Focus Area</span>
                   <span className="text-lg font-bold text-[var(--cw-white)]">{reqData.focusArea || "None declared"}</span>
                 </div>
-                <div className="bg-[var(--cw-navy-light)] border border-[var(--cw-navy-border)] p-5 rounded-lg flex flex-col gap-2">
+                <div className="bg-[var(--cw-navy)] p-5 flex flex-col gap-2">
                   <div className="flex justify-between items-center text-sm text-slate-400">
                     <span>Total Progress</span>
                     <span className="text-[var(--cw-teal)] font-bold">
@@ -303,9 +293,9 @@ export default function GraduationRequirements() {
                     </span>
                   </div>
                   {/* Progress Bar */}
-                  <div className="w-full bg-[var(--cw-navy)] rounded-full h-2.5 mt-1 border border-[var(--cw-navy-border)]">
+                  <div className="w-full bg-[var(--cw-navy-border)] rounded-full h-1.5 mt-1">
                     <div 
-                      className="bg-[var(--cw-teal)] h-2.5 rounded-full transition-all duration-500" 
+                      className="bg-[var(--cw-teal)] h-1.5 rounded-full transition-all duration-500" 
                       style={{ width: `${Math.min((reqData.totalMCsPlanned / reqData.totalMCsRequired) * 100, 100)}%` }}
                     ></div>
                   </div>
@@ -314,15 +304,15 @@ export default function GraduationRequirements() {
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {/* LEFT COLUMN: Requirement Categories */}
-                <div className="flex flex-col gap-4">
-                  <h2 className="text-xl font-bold flex items-center gap-2 border-b border-[var(--cw-navy-border)] pb-2">
+                <div className="flex flex-col">
+                  <h2 className="text-xl font-bold flex items-center gap-2 border-b border-[var(--cw-navy-border)] pb-2 mb-1">
                     <BookOpen size={20} className="text-[var(--cw-teal)]" />
                     Requirement Categories
                   </h2>
                   
-                  {/* Render mapping through new CategoryCard component */}
-                  {reqData.categories.map((category) => (
-                    <CategoryCard key={category.key} category={category} />
+                  {/* Render mapping through flat category rows */}
+                  {reqData.categories.map((category, i) => (
+                    <CategoryCard key={category.key} category={category} isLast={i === reqData.categories.length - 1} />
                   ))}
                 </div>
 
@@ -334,32 +324,31 @@ export default function GraduationRequirements() {
                   </h2>
                   
                   {reqData.fourYearRecommendation.note && (
-                    <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-700 p-3 rounded-md text-sm leading-relaxed mb-2">
-                      <Info size={16} className="mt-0.5 flex-shrink-0 text-blue-500" />
-                      <p>{reqData.fourYearRecommendation.note}</p>
-                    </div>
+                    <p className="text-sm text-slate-500 leading-relaxed -mt-2">
+                      {reqData.fourYearRecommendation.note}
+                    </p>
                   )}
 
                   {/* Scheduled Modules (Grouped by Sem) */}
                   {Object.keys(reqData.fourYearRecommendation.recommendedPlan).length > 0 ? (
-                    <div className="bg-[var(--cw-navy-light)] border border-[var(--cw-navy-border)] rounded-lg overflow-hidden">
-                      <div className="bg-[rgba(10,22,40,0.04)] px-4 py-2 border-b border-[var(--cw-navy-border)] font-semibold text-sm text-slate-500">
+                    <div>
+                      <h4 className="font-semibold text-sm text-slate-500 mb-2">
                         Suggested Modules (Prerequisites Cleared)
-                      </div>
-                      <div className="p-4 flex flex-col gap-4">
+                      </h4>
+                      <div className="flex flex-col gap-4">
                         {Object.entries(reqData.fourYearRecommendation.recommendedPlan).map(([semKey, modules]) => (
                           <div key={semKey}>
-                            <h4 className="text-xs font-bold text-[var(--cw-teal)] mb-2 uppercase tracking-wider">
+                            <h4 className="text-xs font-bold text-[var(--cw-teal)] mb-1.5 uppercase tracking-wider">
                               {semKey.replace('year', 'Year ').replace('_sem', ' Semester ')}
                             </h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="flex flex-col">
                               {modules.map(mod => (
-                                <div key={mod.moduleCode} className="flex justify-between items-center bg-[var(--cw-navy)] border border-[var(--cw-navy-border)] p-2 rounded text-sm">
+                                <div key={mod.moduleCode} className="flex justify-between items-center py-1.5 border-b border-[var(--cw-navy-border)] last:border-b-0 text-sm">
                                   <div>
                                     <span className="font-mono font-semibold text-[var(--cw-white)] mr-2">{mod.moduleCode}</span>
                                     <span className="text-xs text-slate-400 truncate max-w-[150px] inline-block align-bottom">{mod.title}</span>
                                   </div>
-                                  <span className="text-xs text-slate-500 bg-[rgba(10,22,40,0.05)] px-1.5 py-0.5 rounded">{mod.credits} MCs</span>
+                                  <span className="text-xs text-slate-400">{mod.credits} MCs</span>
                                 </div>
                               ))}
                             </div>
@@ -368,23 +357,23 @@ export default function GraduationRequirements() {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-[var(--cw-navy-light)] border border-[var(--cw-navy-border)] p-4 rounded-lg text-sm text-slate-400 text-center">
+                    <p className="text-sm text-slate-400">
                       No core modules pending scheduling.
-                    </div>
+                    </p>
                   )}
 
                   {/* Unscheduled / Bottlenecked Modules */}
                   {reqData.fourYearRecommendation.unscheduled.length > 0 && (
-                    <div className="bg-[rgba(184,114,10,0.05)] border border-warning rounded-lg overflow-hidden mt-2">
-                      <div className="bg-[rgba(184,114,10,0.1)] px-4 py-2 border-b border-warning/30 font-semibold text-sm text-warning flex items-center gap-2">
-                        <AlertTriangle size={16} />
+                    <div className="mt-2">
+                      <h4 className="font-semibold text-sm text-warning flex items-center gap-1.5 mb-2">
+                        <AlertTriangle size={14} />
                         Unscheduled Modules
-                      </div>
-                      <div className="p-4 flex flex-col gap-2">
+                      </h4>
+                      <div className="flex flex-col gap-2">
                         {reqData.fourYearRecommendation.unscheduled.map(mod => (
-                          <div key={mod.moduleCode} className="flex flex-col bg-[var(--cw-navy)] border border-[var(--cw-navy-border)] p-3 rounded">
-                            <span className="font-mono font-semibold text-[var(--cw-white)]">{mod.moduleCode}</span>
-                            <span className="text-sm text-slate-400 mt-1">{mod.reason}</span>
+                          <div key={mod.moduleCode} className="flex flex-col py-1.5 border-b border-[var(--cw-navy-border)] last:border-b-0">
+                            <span className="font-mono font-semibold text-sm text-[var(--cw-white)]">{mod.moduleCode}</span>
+                            <span className="text-xs text-slate-400 mt-0.5">{mod.reason}</span>
                           </div>
                         ))}
                       </div>
@@ -393,13 +382,13 @@ export default function GraduationRequirements() {
 
                   {/* MC Gaps (Electives) */}
                   {reqData.fourYearRecommendation.mcGapsToFillWithElectives.length > 0 && (
-                    <div className="bg-[var(--cw-navy-light)] border border-[var(--cw-navy-border)] rounded-lg p-4 mt-2">
-                      <h4 className="text-sm font-semibold text-slate-500 mb-3">Elective Spaces Remaining</h4>
-                      <div className="flex flex-col gap-2">
+                    <div className="mt-2">
+                      <h4 className="text-sm font-semibold text-slate-500 mb-2">Elective Spaces Remaining</h4>
+                      <div className="flex flex-col gap-1">
                         {reqData.fourYearRecommendation.mcGapsToFillWithElectives.map(gap => (
-                          <div key={gap.key} className="flex justify-between items-center bg-[var(--cw-navy)] border border-[var(--cw-navy-border)] p-2.5 rounded">
-                            <span className="text-sm text-[var(--cw-white)]">{gap.label}</span>
-                            <span className="text-sm font-semibold text-[var(--cw-teal)] bg-[var(--cw-teal-glow)] px-2 py-1 rounded">
+                          <div key={gap.key} className="flex justify-between items-center py-1.5 border-b border-[var(--cw-navy-border)] last:border-b-0 text-sm">
+                            <span className="text-[var(--cw-white)]">{gap.label}</span>
+                            <span className="font-semibold text-[var(--cw-teal)]">
                               {gap.mcsRemaining} MCs left
                             </span>
                           </div>

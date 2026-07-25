@@ -6,8 +6,7 @@ import moduleRoutes from './routes/modules';
 import recommendationRoutes from './routes/recommendations';
 import planRoutes from './routes/plans';
 
-// Express app is defined separately from the listener so tests can import
-// and exercise it (via supertest) without binding a real port.
+// Express app is defined separately from the listener
 const app = express();
 
 app.use(cors());

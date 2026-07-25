@@ -1,8 +1,7 @@
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 
-// Prisma is mocked so these tests exercise real routing, middleware and
-// validation logic without needing a live Postgres connection.
+
 jest.mock('../src/lib/prisma', () => ({
   __esModule: true,
   default: {

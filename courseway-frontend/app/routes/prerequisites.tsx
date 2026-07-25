@@ -1,14 +1,4 @@
-/**
- * Prerequisites page  —  /prerequisites
- *
- * What it does:
- * 1. User types a module code (e.g. CS2040S)
- * 2. Hits the backend GET /modules/:code/prerequisites/tree?depth=3 endpoint
- * 3. Shows the module title and a nested prerequisite tree recursively resolving
- * subtrees (AND/OR/N_OF logic).
- *
- * No auth required for this endpoint, so no ProtectedRoute needed.
- */
+
 
 import { useState, useCallback, useEffect } from 'react'
 import { Search, ChevronRight, ChevronDown, AlertCircle, BookOpen, Loader2, ArrowRight, Waypoints } from 'lucide-react'
@@ -21,7 +11,7 @@ import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar"
 import { TooltipProvider } from "~/components/ui/tooltip"
 import type { TreeNode, TreeResponse } from '~/types'
 import PrerequisiteGraph  from '~/components/graph/PrerequisiteGraph';
-// ─── Types ────────────────────────────────────────────────────────────────────
+
 
 interface ModuleDetail {
   moduleCode: string
@@ -31,7 +21,7 @@ interface ModuleDetail {
 }
 
 
-// ─── Main Page Component ──────────────────────────────────────────────────────
+
 
 export default function PrerequisitesPage() {
   const [query, setQuery] = useState('')
@@ -42,7 +32,6 @@ export default function PrerequisitesPage() {
   const [searchHistory, setSearchHistory] = useState<string[]>([])
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-  // Check auth state for the sidebar so it displays the user profile if they are logged in
   useEffect(() => {
     setIsLoggedIn(!!localStorage.getItem("authToken"))
   }, [])
@@ -58,7 +47,6 @@ export default function PrerequisitesPage() {
     setQuery(normalized)
 
     try {
-      // Fetch new tree endpoint and module detail in parallel
       const [treeRes, moduleRes] = await Promise.all([
         api.get(`/modules/${normalized}/prerequisites/tree?depth=3`),
         api.get(`/modules/${normalized}`),
@@ -67,7 +55,6 @@ export default function PrerequisitesPage() {
       setTreeResult(treeRes.data)
       setModuleDetail(moduleRes.data.module)
 
-      // Add to history (deduplicated, max 8)
       setSearchHistory(prev => {
         const updated = [normalized, ...prev.filter(c => c !== normalized)]
         return updated.slice(0, 8)
@@ -89,8 +76,6 @@ export default function PrerequisitesPage() {
     lookup(query)
   }
 
-  // ─── Data parsing logic ───
-  // Handle both { prerequisiteTree: {...} } and raw TreeNode formats safely
   const rootNode = treeResult?.prerequisiteTree !== undefined
     ? treeResult.prerequisiteTree
     : (treeResult as TreeNode | null)
@@ -120,7 +105,7 @@ export default function PrerequisitesPage() {
           >
             <div className="max-w-3xl mx-auto px-4 py-12 w-full">
 
-              {/* ── Header ── */}
+
               <div className="mb-10">
                 <h1 className="text-3xl font-bold mb-2">Prerequisite Checker</h1>
                 <p style={{ color: 'rgba(10,22,40,0.6)' }}>
@@ -128,7 +113,6 @@ export default function PrerequisitesPage() {
                 </p>
               </div>
 
-              {/* ── Search bar ── */}
               <form onSubmit={handleSubmit} className="flex gap-3 mb-6">
                 <div className="relative flex-1">
                   <Search
@@ -161,7 +145,6 @@ export default function PrerequisitesPage() {
                 </Button>
               </form>
 
-              {/* ── Recent searches ── */}
               {searchHistory.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap mb-8">
                   <span className="text-xs" style={{ color: 'rgba(10,22,40,0.4)' }}>
@@ -180,7 +163,6 @@ export default function PrerequisitesPage() {
                 </div>
               )}
 
-              {/* ── Loading ── */}
               {isLoading && (
                 <div
                   className="rounded-xl p-8 flex items-center justify-center gap-3"
@@ -194,7 +176,6 @@ export default function PrerequisitesPage() {
                 </div>
               )}
 
-              {/* ── Error ── */}
               {error && !isLoading && (
                 <div
                   className="rounded-xl p-5 flex items-start gap-3"
@@ -208,11 +189,8 @@ export default function PrerequisitesPage() {
                 </div>
               )}
 
-              {/* ── Results ── */}
               {treeResult && moduleDetail && !isLoading && (
                 <div className="space-y-4">
-
-                  {/* Module header card */}
                   <div
                     className="rounded-xl p-5"
                     style={{
@@ -244,7 +222,6 @@ export default function PrerequisitesPage() {
                     </div>
                   </div>
 
-                  {/* Prerequisites Tree Section */}
                   <div
                     className="rounded-xl p-5"
                     style={{
@@ -264,7 +241,6 @@ export default function PrerequisitesPage() {
                     </h3>
 
                     {!hasPrerequisites || !rootNode ? (
-                      /* No prerequisites */
                       <div className="flex items-center gap-3 py-3">
                         <div
                           className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
@@ -282,7 +258,6 @@ export default function PrerequisitesPage() {
                         </div>
                       </div>
                     ) : (
-                      /* Tree Render */
                       <div className="text-sm">
                         <p className="mb-4" style={{ color: 'rgba(10,22,40,0.55)' }}>
                           You must satisfy the following conditions before taking {moduleDetail.moduleCode}:
@@ -294,7 +269,6 @@ export default function PrerequisitesPage() {
                       </div>
                     )}
 
-                    {/* Raw prerequisite text from NUSMods (Fallback/Extra Info) */}
                     {treeResult.prerequisiteText && (
                       <div
                         className="mt-6 pt-4 text-sm"
@@ -311,7 +285,6 @@ export default function PrerequisitesPage() {
                     )}
                   </div>
 
-                  {/* Quick actions */}
                   <div className="flex gap-3">
                     <Button
                       variant="outline"
@@ -345,7 +318,6 @@ export default function PrerequisitesPage() {
                 </div>
               )}
 
-              {/* ── Empty state (first load) ── */}
               {!treeResult && !error && !isLoading && (
                 <div
                   className="rounded-xl p-10 text-center"

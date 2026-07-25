@@ -14,7 +14,7 @@ import {
 } from "~/components/ui/dialog"
 import { Input } from "~/components/ui/input"
 import { Button } from "~/components/ui/button"
-import { Activity, X, AlertTriangle, Clock } from "lucide-react"
+import { Activity, X, AlertTriangle, Clock, Share2, Copy, RefreshCw, Unlink, Check } from "lucide-react"
 import api from "~/lib/api"
 
 interface Module {
@@ -77,6 +77,12 @@ export default function PlanBuilder() {
   const [compareWorkloads, setCompareWorkloads] = useState<Record<string, WorkloadData>>({})
   const [isFetchingCompare, setIsFetchingCompare] = useState(false)
 
+  // --- Re-added Share State ---
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [shareToken, setShareToken] = useState<string | null>(null)
+  const [isSharingAction, setIsSharingAction] = useState(false)
+  const [hasCopied, setHasCopied] = useState(false)
+
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchQuery.trim()) {
@@ -98,9 +104,7 @@ export default function PlanBuilder() {
     setIsSearchModalOpen(true)
   }
 
-  // Logic to open the modal and fetch initial data
   const handleOpenCompare = async () => {
-    // Select up to 3 plans to compare, starting with the current one
     const initialIds = [currentPlanId, ...plans.filter(p => p.id !== currentPlanId).map(p => p.id)]
       .filter(Boolean)
       .slice(0, 3) as string[];
@@ -239,6 +243,7 @@ export default function PlanBuilder() {
     setCurrentPlanId(newPlanId)
     setPlan(EMPTY_PLAN) 
     setWorkloadData(null)
+    setShareToken(null) // Reset share token when switching plans
     loadPlanSlots(newPlanId)
   }
 
@@ -255,6 +260,7 @@ export default function PlanBuilder() {
       setPlans(prev => [...prev, data.plan])
       setCurrentPlanId(data.plan.id)
       setPlan(EMPTY_PLAN)
+      setShareToken(null) // Clear token for new plan
       loadPlanSlots(data.plan.id)
       setIsCreateModalOpen(false) 
     } catch (error) {
@@ -276,10 +282,61 @@ export default function PlanBuilder() {
       setPlans(remainingPlans)
       const fallbackId = remainingPlans[0].id
       setCurrentPlanId(fallbackId)
+      setShareToken(null) // Clear token on deletion
       loadPlanSlots(fallbackId)
     } catch (error) {
       console.error("Failed to delete plan:", error)
     }
+  }
+
+  // --- Re-added Share Logic ---
+  const handleEnableShare = async () => {
+    if (!currentPlanId) return
+    setIsSharingAction(true)
+    try {
+      const { data } = await api.post(`/plans/${currentPlanId}/share`)
+      setShareToken(data.shareToken)
+    } catch (error) {
+      console.error("Failed to enable sharing:", error)
+    } finally {
+      setIsSharingAction(false)
+    }
+  }
+
+  const handleRotateShare = async () => {
+    if (!currentPlanId) return
+    setIsSharingAction(true)
+    try {
+      const { data } = await api.post(`/plans/${currentPlanId}/share/rotate`)
+      setShareToken(data.shareToken)
+      setHasCopied(false)
+    } catch (error) {
+      console.error("Failed to rotate share link:", error)
+    } finally {
+      setIsSharingAction(false)
+    }
+  }
+
+  const handleDisableShare = async () => {
+    if (!currentPlanId) return
+    setIsSharingAction(true)
+    try {
+      await api.delete(`/plans/${currentPlanId}/share`)
+      setShareToken(null)
+      setHasCopied(false)
+    } catch (error) {
+      console.error("Failed to disable sharing:", error)
+    } finally {
+      setIsSharingAction(false)
+    }
+  }
+
+  const handleCopyLink = () => {
+    if (!shareToken) return
+    const url = `${window.location.origin}/shared/${shareToken}`
+    navigator.clipboard.writeText(url)
+    setHasCopied(true)
+    setTimeout(() => setHasCopied(false), 2000)
   }
 
   const allPlacedCodes = Object.values(plan).flat().map(m => m.moduleCode)
@@ -437,6 +494,70 @@ export default function PlanBuilder() {
             </DialogContent>
           </Dialog>
 
+          {/* Re-added Share Modal */}
+          <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
+            <DialogContent className="bg-[var(--cw-navy)] border-[var(--cw-navy-border)] text-[var(--cw-white)] sm:max-w-[450px]">
+              <DialogHeader>
+                <DialogTitle>Share Plan</DialogTitle>
+                <DialogDescription className="text-slate-400">
+                  Allow others to view a read-only version of this plan via a public link.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="py-4">
+                {!shareToken ? (
+                  <div className="flex flex-col items-center justify-center gap-4 py-6 border border-dashed border-[var(--cw-navy-border)] rounded-lg bg-[var(--cw-navy-light)]">
+                    <p className="text-sm text-muted-foreground text-center px-4">
+                      This plan is currently private. Generate a share link to make it visible to others.
+                    </p>
+                    <Button 
+                      onClick={handleEnableShare} 
+                      disabled={isSharingAction}
+                      className="bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)]"
+                    >
+                      {isSharingAction ? "Generating..." : "Generate Share Link"}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2">
+                      <Input 
+                        readOnly 
+                        value={`${window.location.origin}/shared/${shareToken}`}
+                        className="bg-[var(--cw-navy)] border-[var(--cw-navy-border)] text-[var(--cw-white)] focus-visible:ring-0 flex-1 cursor-text"
+                      />
+                      <Button 
+                        onClick={handleCopyLink}
+                        className="bg-[var(--cw-navy-light)] border border-[var(--cw-navy-border)] text-[var(--cw-white)] hover:bg-[var(--cw-navy-border)] px-3"
+                      >
+                        {hasCopied ? <Check size={16} className="text-[var(--cw-teal)]" /> : <Copy size={16} />}
+                      </Button>
+                    </div>
+
+                    <div className="flex justify-between mt-2">
+                      <Button 
+                        variant="ghost" 
+                        onClick={handleRotateShare}
+                        disabled={isSharingAction}
+                        className="text-xs text-slate-400 hover:text-[var(--cw-white)] flex items-center gap-1 h-8 px-2"
+                      >
+                        <RefreshCw size={12} /> Rotate Link
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        onClick={handleDisableShare}
+                        disabled={isSharingAction}
+                        className="text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 flex items-center gap-1 h-8 px-2"
+                      >
+                        <Unlink size={12} /> Disable Sharing
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={isCompareModalOpen} onOpenChange={setIsCompareModalOpen}>
           <DialogContent className="bg-[var(--cw-navy)] border-[var(--cw-navy-border)] text-[var(--cw-white)] sm:max-w-[90vw] h-[85vh] flex flex-col">
             <DialogHeader className="flex-shrink-0">
@@ -478,14 +599,13 @@ export default function PlanBuilder() {
                   'grid-cols-3'
                 }`}>
                   {(() => {
-                    // 1. Get a unique, sorted list of every semester that has data across ALL selected plans
                     const allActiveSemKeys = Array.from(
                       new Set(
                         selectedComparePlanIds.flatMap(id => 
                           Object.keys(compareWorkloads[id]?.workload || {})
                         )
                       )
-                    ).sort(); // Alphabetical sort naturally orders year1_sem1, year1_sem2 perfectly!
+                    ).sort(); 
 
                     return selectedComparePlanIds.map(planId => {
                       const planDetails = plans.find(p => p.id === planId);
@@ -504,7 +624,6 @@ export default function PlanBuilder() {
                               const semData = wData[semKey];
                               const semTitle = semKey.replace('year', 'Y').replace('_sem', ' S');
 
-                              // If this specific plan doesn't have data for this semester, render an aligned placeholder
                               if (!semData) {
                                 return (
                                   <div key={semKey} className="bg-[var(--cw-navy)] rounded-lg border border-dashed border-[var(--cw-navy-border)] opacity-60 flex flex-col items-center justify-center min-h-[140px]">
@@ -514,7 +633,6 @@ export default function PlanBuilder() {
                                 );
                               }
 
-                              // Standard render
                               return (
                                 <div key={semKey} className="bg-[var(--cw-navy)] rounded-lg border border-[var(--cw-navy-border)] overflow-hidden">
                                   <div className="bg-[rgba(10,22,40,0.04)] px-3 py-2 border-b border-[var(--cw-navy-border)] flex justify-between items-center">
@@ -593,6 +711,20 @@ export default function PlanBuilder() {
               </div>
 
               <div className="flex gap-2">
+              {/* Re-added Share Button */}
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                disabled={!currentPlanId}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors border ${
+                  !currentPlanId 
+                    ? "opacity-50 cursor-not-allowed bg-[var(--cw-navy-light)] text-muted-foreground border-[var(--cw-navy-border)]"
+                    : "bg-[var(--cw-navy-light)] text-[var(--cw-white)] border-[var(--cw-navy-border)] hover:bg-[var(--cw-navy-border)]"
+                }`}
+              >
+                <Share2 size={16} />
+                Share
+              </button>
+
               <button
                 onClick={handleOpenCompare}
                 disabled={plans.length < 2}
@@ -658,7 +790,6 @@ export default function PlanBuilder() {
                   </Button>
                 </div>
 
-                {/* Panel Content */}
                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                   {isLoadingWorkload ? (
                     <div className="flex items-center justify-center h-32 text-muted-foreground">
@@ -670,13 +801,11 @@ export default function PlanBuilder() {
                         <p className="text-sm text-muted-foreground text-center mt-8">No workload data available.</p>
                       ) : (
                         Object.entries(workloadData.workload).map(([semKey, semData]) => {
-                          // Format "year1_sem1" into "Year 1 Semester 1"
                           const title = semKey.replace('year', 'Year ').replace('_sem', ' Semester ')
                           
                           return (
                             <div key={semKey} className="bg-[var(--cw-navy)] rounded-lg border border-[var(--cw-navy-border)] overflow-hidden">
                               
-                              {/* Semester Header */}
                               <div className="bg-[rgba(10,22,40,0.04)] px-4 py-3 border-b border-[var(--cw-navy-border)] flex justify-between items-center">
                                 <span className="font-bold text-sm tracking-wide text-[var(--cw-white)]">{title}</span>
                                 <div className="flex gap-3 text-xs text-muted-foreground font-medium">
@@ -686,7 +815,6 @@ export default function PlanBuilder() {
                               </div>
                               
                               <div className="p-4 flex flex-col gap-3">
-                                {/* Dynamic Semester Flags */}
                                 {semData.flags && semData.flags.length > 0 && (
                                   <div className="flex flex-col gap-2 mb-1">
                                     {semData.flags.includes('overloaded') && (
@@ -697,7 +825,6 @@ export default function PlanBuilder() {
                                   </div>
                                 )}
                                 
-                                {/* Aggregate Hours Breakdown */}
                                 <div className="grid grid-cols-2 gap-2">
                                   <div className="flex justify-between items-center text-xs bg-[rgba(10,22,40,0.04)] rounded px-2.5 py-2 border border-[var(--cw-navy-border)]">
                                     <span className="text-muted-foreground">Lecture:</span>

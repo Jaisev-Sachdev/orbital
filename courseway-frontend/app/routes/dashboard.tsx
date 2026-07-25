@@ -3,7 +3,6 @@ import { Link } from "react-router-dom"
 import { AppSidebar } from "~/components/app-sidebar"
 import { ChartAreaInteractive } from "~/components/chart-area-interactive"
 import { DataTable } from "~/components/data-table"
-import { SectionCards } from "~/components/section-cards"
 import { SiteHeader } from "~/components/site-header"
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar"
 import { TooltipProvider } from "~/components/ui/tooltip" 
@@ -12,7 +11,6 @@ import { Button } from "~/components/ui/button"
 import data from "./data.json"
 
 export default function Page() {
-  // After — read localStorage synchronously on init, no effect needed
   const [isLoggedIn] = useState(() => !!localStorage.getItem("authToken"))
 
   return (
@@ -25,7 +23,6 @@ export default function Page() {
           } as React.CSSProperties
         }
       >
-        {/* Pass the auth state to the sidebar */}
         <AppSidebar variant="inset" isLoggedIn={isLoggedIn} />
         
         <SidebarInset>
@@ -35,16 +32,16 @@ export default function Page() {
               <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 h-full">
                 
                 {isLoggedIn ? (
-                  /* --- AUTHENTICATED VIEW --- */
+
                   <>
-                    <SectionCards />
+                    
                     <div className="px-4 lg:px-6">
                       <ChartAreaInteractive />
                     </div>
                     <DataTable data={data as any} />
                   </>
                 ) : (
-                  /* --- UNAUTHENTICATED VIEW --- */
+
                   <div className="flex flex-col items-center justify-center flex-1 h-full min-h-[60vh] text-center px-4">
                     <h1 className="text-4xl font-bold tracking-tight mb-4">Welcome to Courseway</h1>
                     <p className="text-xl text-muted-foreground mb-8 max-w-2xl">

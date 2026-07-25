@@ -56,13 +56,11 @@ interface RequirementsResponse {
   fourYearRecommendation: FourYearRecommendation
 }
 
-// --- Category row: flat list item, not a boxed card ---
 const CategoryCard = ({ category, isLast }: { category: Category; isLast: boolean }) => {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
     <div className={isLast ? "" : "border-b border-[var(--cw-navy-border)]"}>
-      {/* Header (Clickable) */}
       <div 
         className="flex justify-between items-center cursor-pointer select-none py-3.5"
         onClick={() => setIsOpen(!isOpen)}
@@ -88,7 +86,6 @@ const CategoryCard = ({ category, isLast }: { category: Category; isLast: boolea
         </div>
       </div>
 
-      {/* Render MC Totals Progress Bar (Always visible if mc_total) */}
       {category.type === "mc_total" && (
         <div className="w-full bg-[var(--cw-navy-border)] rounded-full h-1 -mt-1 mb-3">
           <div 
@@ -98,18 +95,15 @@ const CategoryCard = ({ category, isLast }: { category: Category; isLast: boolea
         </div>
       )}
 
-      {/* Dropdown Content */}
       {isOpen && (
         <div className="pb-4 pl-6 animate-in fade-in slide-in-from-top-2 duration-200">
           
-          {/* Notes section */}
           {category.notes && (
             <p className="text-sm text-slate-500 leading-relaxed mb-3">
               {category.notes}
             </p>
           )}
 
-          {/* Module Lists */}
           {category.type === "module_list" && (
             <div className="flex flex-col gap-4">
               {category.minRequired && (
@@ -118,7 +112,6 @@ const CategoryCard = ({ category, isLast }: { category: Category; isLast: boolea
                 </p>
               )}
               
-              {/* Taken Modules */}
               <div>
                 <h4 className="text-xs text-slate-400 uppercase font-semibold mb-2 tracking-wider">
                   Completed / Planned ({category.taken?.length || 0})
@@ -136,7 +129,6 @@ const CategoryCard = ({ category, isLast }: { category: Category; isLast: boolea
                 </div>
               </div>
               
-              {/* Missing Modules */}
               <div>
                 <h4 className="text-xs text-slate-400 uppercase font-semibold mb-2 tracking-wider">
                   Missing / Available Options ({category.missing?.length || 0})
@@ -228,7 +220,6 @@ export default function GraduationRequirements() {
       <SidebarInset className="flex flex-col h-screen overflow-hidden">
         <SiteHeader />
 
-        {/* Page Header */}
         <div className="px-8 pt-6 pb-4 border-b border-[var(--cw-navy-border)]">
           <div className="flex items-center justify-between">
             <div>
@@ -258,7 +249,6 @@ export default function GraduationRequirements() {
           </div>
         </div>
 
-        {/* Main Content Area */}
         <div className="flex-1 overflow-auto p-8 custom-scrollbar">
           {isLoading ? (
             <div className="flex justify-center items-center h-40 text-slate-400">
@@ -292,7 +282,7 @@ export default function GraduationRequirements() {
                       {reqData.totalMCsPlanned} / {reqData.totalMCsRequired} MCs
                     </span>
                   </div>
-                  {/* Progress Bar */}
+
                   <div className="w-full bg-[var(--cw-navy-border)] rounded-full h-1.5 mt-1">
                     <div 
                       className="bg-[var(--cw-teal)] h-1.5 rounded-full transition-all duration-500" 
@@ -303,23 +293,18 @@ export default function GraduationRequirements() {
               </div>
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                {/* LEFT COLUMN: Requirement Categories */}
                 <div className="flex flex-col">
                   <h2 className="text-xl font-bold flex items-center gap-2 border-b border-[var(--cw-navy-border)] pb-2 mb-1">
-                    <BookOpen size={20} className="text-[var(--cw-teal)]" />
                     Requirement Categories
                   </h2>
                   
-                  {/* Render mapping through flat category rows */}
                   {reqData.categories.map((category, i) => (
                     <CategoryCard key={category.key} category={category} isLast={i === reqData.categories.length - 1} />
                   ))}
                 </div>
 
-                {/* RIGHT COLUMN: AI Recommendations */}
                 <div className="flex flex-col gap-4">
                   <h2 className="text-xl font-bold flex items-center gap-2 border-b border-[var(--cw-navy-border)] pb-2">
-                    <span className="text-[var(--cw-teal)]">✨</span>
                     Smart Scheduling Recommendations
                   </h2>
                   
@@ -329,7 +314,6 @@ export default function GraduationRequirements() {
                     </p>
                   )}
 
-                  {/* Scheduled Modules (Grouped by Sem) */}
                   {Object.keys(reqData.fourYearRecommendation.recommendedPlan).length > 0 ? (
                     <div>
                       <h4 className="font-semibold text-sm text-slate-500 mb-2">
@@ -362,7 +346,6 @@ export default function GraduationRequirements() {
                     </p>
                   )}
 
-                  {/* Unscheduled / Bottlenecked Modules */}
                   {reqData.fourYearRecommendation.unscheduled.length > 0 && (
                     <div className="mt-2">
                       <h4 className="font-semibold text-sm text-warning flex items-center gap-1.5 mb-2">
@@ -380,7 +363,6 @@ export default function GraduationRequirements() {
                     </div>
                   )}
 
-                  {/* MC Gaps (Electives) */}
                   {reqData.fourYearRecommendation.mcGapsToFillWithElectives.length > 0 && (
                     <div className="mt-2">
                       <h4 className="text-sm font-semibold text-slate-500 mb-2">Elective Spaces Remaining</h4>

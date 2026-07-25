@@ -18,30 +18,26 @@ export default function PrerequisiteGraph({ treeResult }: { treeResult: TreeResp
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   
-  // Track which nodes the user has clicked to expand
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (treeResult?.prerequisiteTree) {
-      // Pass the expanded nodes into the mapper
       const { nodes: initialNodes, edges: initialEdges } = mapTreeToGraph(treeResult.prerequisiteTree, expandedNodes);
       const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(initialNodes, initialEdges);
       
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
     }
-  }, [treeResult, expandedNodes]); // Re-run whenever expandedNodes changes!
+  }, [treeResult, expandedNodes]);
 
-  // <-- Explicitly typed the mouse event and prev state to make TS happy
   const handleNodeClick = (event: React.MouseEvent, node: Node) => {
-    // Only toggle logic if the node actually has hidden children
     if (node.data?.isCollapsed || expandedNodes.has(node.id)) {
       setExpandedNodes((prev: Set<string>) => {
         const next = new Set(prev);
         if (next.has(node.id)) {
-          next.delete(node.id); // Collapse it
+          next.delete(node.id); 
         } else {
-          next.add(node.id);    // Expand it
+          next.add(node.id);    
         }
         return next;
       });
@@ -49,7 +45,6 @@ export default function PrerequisiteGraph({ treeResult }: { treeResult: TreeResp
   };
 
   return (
-    // <-- Added some tailwind classes here to clean up the border
     <div style={{ width: '100%', height: '600px' }} className="rounded-xl border border-[var(--cw-navy-border)] overflow-hidden">
       <ReactFlow
         nodes={nodes}

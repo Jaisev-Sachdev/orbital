@@ -15,7 +15,6 @@ export default function ProfileSettings() {
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-  // Form State
   const [name, setName] = useState("")
   const [email, setEmail] = useState("") 
   const [major, setMajor] = useState("")
@@ -105,7 +104,6 @@ export default function ProfileSettings() {
               ) : (
                 <div className="flex flex-col gap-8">
                   
-                  {/* Account Settings Section */}
                   <div className="bg-[var(--cw-navy)] border border-[var(--cw-navy-border)] rounded-lg p-6 shadow-sm">
                     <h2 className="text-xl font-semibold text-[var(--cw-white)] mb-4 flex items-center gap-2">
                       <User className="text-[var(--cw-teal)]" size={20} />
@@ -219,7 +217,7 @@ export default function ProfileSettings() {
                     </div>
                   </div>
 
-                  {/* Actions */}
+  
                   <div className="flex items-center justify-between pt-4">
                     <div>
                       {message && (

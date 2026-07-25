@@ -77,12 +77,12 @@ export default function Home() {
               )}
               <div className="pt-4 flex justify-center gap-4">
                 <Link to="/module-planning">
-                  <Button size="lg" className="bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)] font-semibold">
+                  <Button size="lg" className="bg-[var(--cw-teal)] text-white hover:bg-[var(--cw-teal-dim)] font-semibold">
                     Open Module Planner
                   </Button>
                 </Link>
                 <Link to="/recommendations">
-                  <Button size="lg" variant="outline" className="border-[var(--cw-navy-border)] text-white hover:bg-[var(--cw-navy-light)]">
+                  <Button size="lg" variant="outline" className="border-[var(--cw-navy-border)] text-[var(--cw-white)] hover:bg-[var(--cw-navy-light)]">
                     AI Recommendations
                   </Button>
                 </Link>
@@ -109,12 +109,12 @@ export default function Home() {
 
         <div className="flex items-center gap-4">
           <Link to="/login">
-            <Button variant="ghost" className="text-muted-foreground hover:text-white">
+            <Button variant="ghost" className="text-muted-foreground hover:text-[var(--cw-white)]">
               Log In
             </Button>
           </Link>
           <Link to="/signup">
-            <Button className="bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)] font-semibold">
+            <Button className="bg-[var(--cw-teal)] text-white hover:bg-[var(--cw-teal-dim)] font-semibold">
               Sign Up
             </Button>
           </Link>
@@ -137,12 +137,12 @@ export default function Home() {
           
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
             <Link to="/signup">
-              <Button size="lg" className="h-12 px-8 bg-[var(--cw-teal)] text-[var(--cw-navy)] hover:bg-[var(--cw-teal-dim)] text-base font-bold transition-all">
+              <Button size="lg" className="h-12 px-8 bg-[var(--cw-teal)] text-white hover:bg-[var(--cw-teal-dim)] text-base font-bold transition-all">
                 Get Started for Free
               </Button>
             </Link>
             <Link to="/login">
-              <Button size="lg" variant="outline" className="h-12 px-8 border-[var(--cw-navy-border)] text-white hover:bg-[var(--cw-navy-light)] text-base font-semibold">
+              <Button size="lg" variant="outline" className="h-12 px-8 border-[var(--cw-navy-border)] text-[var(--cw-white)] hover:bg-[var(--cw-navy-light)] text-base font-semibold">
                 Log In to Account
               </Button>
             </Link>

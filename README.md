@@ -4,7 +4,7 @@
 
 NUS Orbital 2026 · Apollo 11 · THE Team · Courseway
 
-> **Live:** Frontend at [courseway-frontend.vercel.app](https://courseway-frontend.vercel.app) · Backend at [courseway-backend-w5ua.onrender.com](https://courseway-backend-w5ua.onrender.com)
+> **Deployed at** [courseway-frontend.vercel.app](https://courseway-frontend.vercel.app) (frontend) · [courseway-backend-w5ua.onrender.com](https://courseway-backend-w5ua.onrender.com) (backend)
 
 ---
 
@@ -112,7 +112,7 @@ A multi-step onboarding form that collects profile data, completed modules, and 
 
 ### Feature 2: NUSMods Module Search
 
-Real-time search across all 7139 NUS modules. The backend queries PostgreSQL with a case-insensitive OR filter on both `moduleCode` and `title`, returning up to 20 results. Module data was synced from the NUSMods public API using a batch sync script. 
+Real-time search across all 7139 NUS modules. The backend queries PostgreSQL with a case-insensitive OR filter on both `moduleCode` and `title`, returning up to 20 results. Module data was synced from the NUSMods public API using a batch sync script.
 
 <img width="1992" height="1372" alt="image" src="https://github.com/user-attachments/assets/6d2b6ac7-9a18-47e8-9483-723c13aa90c3" />
 

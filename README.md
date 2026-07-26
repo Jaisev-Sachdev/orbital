@@ -854,11 +854,37 @@ All API endpoints additionally tested via Thunder Client during development:
 
 ### User Testing
 
-User testing was run with students matched through the Orbital advisor-testing pool, using a self-guided task list covering: profile/account setup, building a semester plan, checking graduation requirements, AI recommendations, and semester workload. Testers reported back what worked, what was confusing or broken, and general notes for each task.
+User testing was run with 5 students matched through the Orbital advisor-testing pool. Each tester worked through a self-guided task list covering six user stories: account/profile setup, AI recommendations, plan building, workload estimation, graduation requirements, and prerequisite lookup. Testers recorded what worked, what was confusing or broken, and any additional notes per task. Responses are anonymised below.
 
-**Status: in progress. 4 of 5 tester responses received.** Structured results (per-task findings) will be added here once the final response is in and findings are compiled.
+**All 5 of 5 responses received.**
 
-*(Placeholder, full results table to be added.)*
+#### Per-Task Results
+
+| User story / task | What worked well | What was confusing or broken |
+|---|---|---|
+| **Register and complete profile setup** (major, faculty, year, cohort) | Registration and onboarding described as intuitive, clean, and easy to follow across all 5 testers; "simple details and good UI" | 3 of 5 flagged slow first load (one measured 15-20s) with no loading bar or progress indicator; majors dropdown scrolling reported as "a bit glitchy" |
+| **Complete onboarding and get AI module recommendations** (optionally with a stated goal) | Recommendations matched stated goals and respected prerequisites; per-module explanations singled out as the strongest feature: "the description of WHY to take each of the modules was so accurate"; module search results appeared responsively | A Statistics + Economics double-major tester was recommended CS modules they never asked for; no field to declare a second major or minor; no cohort option for AY2026/2027 |
+| **Create a plan, search modules, assign 3-5 modules to semesters** | Interface described as intuitive with clear affordances; having all 4 years laid out at once helped testers track what they had taken and plan ahead; multiple-plan support seen as useful for comparing paths | Adding modules one at a time (Add module → type → select, repeated) was called tedious; testers wanted multi-select from a single search. One tester reported the shareable plan link "might be faulty" |
+| **Open the workload view and check MC/hour breakdown and overload flags** | The red overload warning communicated the problem clearly; the per-category hour breakdown (lecture/tutorial/lab/project/prep) helped testers set expectations before committing | One tester found it purely descriptive: "it's just listing stuff but doesn't provide insights" — wanted comparative signals (which semester is more project-heavy, which is lighter). One asked how the hourly estimate is derived |
+| **Read the graduation requirements progress breakdown** (CS majors only) | The suggested 4-year plan was well received; "gives a very good view of everything by section" | Only 2 of 5 testers could evaluate this at all — the other 3 are not CS majors and left it blank. Category rows are clickable to expand satisfied/missing modules, but one tester did not discover this. Another found the view "a bit wordy and overloaded" and wanted separate tabs |
+| **Look up a module's prerequisites; click through to earlier prerequisites** | Consistently one of the best-received features: "makes such a confusing thing look simple"; the tree clearly showed what was needed, and click-to-expand for deeper prerequisites worked as expected | Pan/zoom interaction was not discoverable — testers wanted on-screen instructions on whether to hold-click or scroll; nodes render too small to read comfortably ("not considerate enough for people with eyesight problems"); AND ("all of") and OR ("any of") nodes look too similar and risk being misread |
+
+#### Synthesised Findings and Actions
+
+| # | Finding | Severity | Evidence | Action |
+|---|---|---|---|---|
+| 1 | Recommendation engine suggests CS modules to non-CS majors | High | Statistics + Economics tester received unrequested CS recommendations | Genuine defect. The prefix-inference step biases toward CS regardless of declared major. Needs a major-aware module pool, mirroring the gate already applied to the requirements tracker |
+| 2 | No loading state during backend cold start | High | 3 of 5 testers; up to 20s with no feedback | Render free-tier spin-down is documented, but the frontend gives no signal. Add a spinner/skeleton and a "waking up the server" message on first request |
+| 3 | Prerequisite graph is hard to read and operate | Medium | Small nodes, undiscoverable pan/zoom, AND vs OR visually similar | Add zoom controls and a short interaction hint; increase default node size; colour- and label-differentiate logic nodes |
+| 4 | Graduation requirements view is dense and its interactions are hidden | Medium | Expandable categories missed by one tester; "wordy and overloaded" | Make expand affordances explicit (chevrons/hover state); consider tabbed or collapsed-by-default sections |
+| 5 | Module assignment is repetitive | Medium | Add-one-at-a-time loop called tedious | The `POST /plans/:id/slots/bulk` endpoint already supports batching; the frontend does not use it. Wire multi-select in search to the bulk endpoint |
+| 6 | Profile model too narrow for real degree structures | Medium | No second major, no minor, no AY2026/2027 cohort | Second majors were deliberately excluded from MS3 scope to bound the combination space; the missing cohort year is a straightforward config fix |
+| 7 | Workload view reports without interpreting | Low | "Doesn't provide insights"; one tester asked how hours are derived | Add comparative framing across semesters and surface the NUSMods-derived basis of the estimate |
+| 8 | Shareable plan link reported as possibly faulty | Needs verification | One tester, unconfirmed | A frontend routing bug was found and fixed in PR #37 after this session. End-to-end click-through verification is still outstanding |
+| 9 | Majors dropdown scrolling is glitchy | Low | One tester | Minor UI polish on the 61-item select |
+| 10 | Graduation tracker is untestable for most testers | Structural | 3 of 5 blocked as non-CS majors | Expected given the deliberate CS-only scope, but it means the feature carries the thinnest user-testing evidence of any in the project. Worth noting when prioritising which majors to support next |
+
+The two highest-severity findings (1 and 2) are user-facing defects rather than missing features, and are the priority for the next iteration.
 
 ---
 
@@ -897,11 +923,11 @@ User testing was run with students matched through the Orbital advisor-testing p
 - [x] Plan variants: compare up to 3 plans' workload side by side
 - [x] Shareable plan links (backend complete and tested; frontend routing bug found and fixed in PR #37, merged; manual click-through verification still pending)
 - [x] Automated backend test suite (Jest + Supertest): 18 passing tests
+- [x] Full user testing with structured findings: 5/5 responses received, per-task results and prioritised actions documented
 - [ ] ~~Drag and drop semester slot reordering~~ (**descoped**, not attempted: dependency installed but never wired up, removed from MS3 scope for time)
 - [ ] Workload clash alerts: not attempted beyond the existing MC/hour overload flag from MS2
 - [ ] AI what-if simulator: not attempted
 - [ ] Frontend automated tests (React Testing Library): not completed, backend suite only
-- [ ] Full user testing with structured findings: in progress, 4/5 responses received
 - [ ] Splashdown poster and demo video
 
 ---
@@ -911,6 +937,11 @@ User testing was run with students matched through the Orbital advisor-testing p
 | Issue | Priority | Planned Fix |
 |---|---|---|
 | Module recommendation pool capped at 50 | Low | Eligibility-based filtering using prereq evaluator |
+| AI recommendations skew to CS modules regardless of declared major | High | Surfaced in user testing. Make the module-pool prefix inference major-aware instead of CS-biased |
+| No frontend loading state during backend cold start (up to 20s) | High | Surfaced in user testing. Add spinner/skeleton and a "waking up the server" message on first request |
+| Prerequisite graph nodes small; pan/zoom undiscoverable; AND vs OR visually similar | Medium | Surfaced in user testing. Add zoom controls, interaction hint, and distinct styling for logic nodes |
+| Plan builder adds modules one at a time despite `/slots/bulk` existing | Medium | Surfaced in user testing. Wire multi-select search to the existing bulk endpoint |
+| No second major / minor support; no AY2026/2027 cohort option | Medium | Second majors descoped for MS3; cohort year is a config fix |
 | Frontend has no automated tests | Low | React Testing Library, if time permits post-MS3 |
 | Drag-and-drop reordering dependency (`@dnd-kit/*`) installed but unused | Low | Remove from `package.json` if not implemented, to avoid confusion |
 | Frontend dashboard uses some placeholder data | Low | Connect all panels to live backend |

@@ -12,7 +12,7 @@ NUS Orbital 2026 · Apollo 11 · THE Team · Courseway
 
 Courseway helps NUS students plan their academic journey more effectively. Students input their major, year of study, and completed modules to receive personalised, AI-powered module recommendations and build a 4-year academic plan.
 
-The core philosophy is a **rules engine with an AI brain**: deterministic logic handles prerequisite checking and workload calculation, while the AI layer provides personalised recommendations and explanations. Recommendations are always grounded in real NUSMods data and never hallucinated.
+The core philosophy is a **rules engine with an AI brain**: deterministic logic handles prerequisite checking, workload calculation, and graduation-requirement tracking, while the AI layer provides personalised recommendations and explanations. Recommendations are always grounded in real NUSMods data and never hallucinated.
 
 ---
 
@@ -39,6 +39,7 @@ Courseway solves this by:
 | Database | PostgreSQL + Prisma ORM (v6) |
 | AI | Anthropic Claude API (claude-sonnet-4) |
 | Module Data | NUSMods Public API (2025-2026) |
+| Testing | Jest + Supertest (backend) |
 | Hosting | Vercel (frontend) + Render (backend + PostgreSQL) |
 
 ---
@@ -46,17 +47,17 @@ Courseway solves this by:
 ## System Architecture
 
 ```
-┌─────────────────┐     HTTP/REST      ┌──────────────────────┐
-│  React Frontend  │ ◄────────────────► │   Express Backend     │
+┌──────────────────────     HTTP/REST      ┌──────────────────────────
+│  React Frontend  │ ◄───────────────── ► │   Express Backend     │
 │  (port 5173)     │                    │   (port 3001)         │
-└─────────────────┘                    └──────────┬───────────┘
+└───────────────────                    └──────────────────────────
                                                    │
-                              ┌────────────────────┼────────────────────┐
+                              ┌──────────────────────┼──────────────────────┐
                               │                    │                    │
-                    ┌─────────▼────────┐  ┌───────▼────────┐  ┌───────▼────────┐
+                    ┌────────▼────────┐  ┌───────▼────────┐  ┌───────▼────────┐
                     │   PostgreSQL DB   │  │  NUSMods API   │  │ Anthropic API  │
                     │  (Prisma ORM)     │  │  (public)      │  │ (Claude AI)    │
-                    └──────────────────┘  └────────────────┘  └────────────────┘
+                    └──────────────────  └────────────────  └────────────────
 ```
 
 ---
@@ -89,7 +90,7 @@ Real-time search across all 7139 NUS modules. The backend queries PostgreSQL wit
 
 ### Feature 4 — Guided 3-Step Onboarding Flow
 
-A multi-step onboarding form that collects profile data, completed modules, and goals before generating a personalised plan. Each step is validated before proceeding. Module search is debounced (300ms) to avoid excessive API calls.
+A multi-step onboarding form that collects profile data, completed modules, and goals before generating a personalised plan. Major is validated against a canonical list of 61 NUS primary majors (backend whitelist, `src/config/nusMajors.ts`) rather than accepting free text — this also gates which students see the graduation requirements tracker (Feature 10). Each step is validated before proceeding. Module search is debounced (300ms) to avoid excessive API calls.
 
 ![Onboarding Step 1 — Profile](docs/screenshots/onboarding-step1.png)
 
@@ -105,7 +106,7 @@ Full register/login/logout flow with JWT tokens. Passwords are hashed with bcryp
 
 ### Feature 6 — 4-Year Academic Plan Builder
 
-Students create a named plan and assign modules to specific year/semester slots. Slots are enriched with title and credits from the module table. The plan can be renamed or deleted. Multiple plans are supported for comparing different degree paths.
+Students create a named plan and assign modules to specific year/semester slots. Slots are enriched with title and credits from the module table. The plan can be renamed or deleted. Multiple plans are supported for comparing different degree paths (see Feature 12).
 
 ![Plan Builder](docs/screenshots/plan-builder.png)
 
@@ -119,17 +120,57 @@ For each semester in a plan, the backend computes total MCs, total weekly hours 
 
 ---
 
-### Feature 8 — Recursive Prerequisite Tree
+### Feature 8 — Recursive Prerequisite Parser + Tree Endpoint
 
-A hand-written recursive descent parser converts raw NUSMods prerequisite strings into an AST with node types `MODULE`, `AND`, `OR`, `N_OF`, `PROGRAMME`, and `OTHER`. The tree endpoint recursively resolves each MODULE node up to a configurable depth (default 3, max 5), enriching each node with its title and its own prerequisite subtree. A per-request module cache avoids redundant DB queries and a visited set guards against circular prerequisites.
+A hand-written recursive descent parser converts raw NUSMods prerequisite strings into an AST with node types `MODULE`, `AND`, `OR`, `N_OF`, `PROGRAMME`, and `OTHER`. The tree endpoint recursively resolves each MODULE node up to a configurable depth (default 3, max 5), enriching each node with its title and its own prerequisite subtree. A per-request module cache avoids redundant DB queries and a visited set guards against circular prerequisites. `OTHER`-type nodes (grade/level conditions the parser can't structurally resolve) carry a short `label` capped at 48 characters for compact UI rendering, alongside the full raw `text` for a tooltip.
 
-![Prerequisite Tree](docs/screenshots/tree.png)
+This is the data layer behind both the JSON-style prerequisite checker (below) and the graph visualisation (Feature 11).
+
+![Prerequisite Checker](docs/screenshots/tree.png)
 
 ---
 
 ### Feature 9 — User Profile with Display Name
 
 Users can set and update a display name via `PUT /auth/me`. `GET /auth/me` returns the user's id, email, name, and account creation date.
+
+---
+
+### Feature 10 — Graduation Requirements Tracker *(new in MS3)*
+
+For Computer Science majors, the requirements engine classifies every planned module into a bucket (foundation, math & science, common curriculum, breadth & depth) using an explicit module-list match plus a moduleCode-prefix fallback, and reports progress against each category alongside a 4-year recommendation of remaining required modules. A module-equivalence map (e.g. `CS1010S` → `CS1101S`, `CS2030` → `CS2030S`) means non-S-track modules correctly satisfy the S-track requirement slot instead of showing up as a duplicate recommendation. Students in any other major see a clear "not yet supported for your major" message instead of incorrect CS-specific results.
+
+![Graduation Requirements Tracker](docs/screenshots/graduation.png)
+
+*(Screenshot needed — not yet captured)*
+
+---
+
+### Feature 11 — Interactive Prerequisite Graph *(new in MS3)*
+
+A node-graph visualisation of a module's prerequisite chain, built with `@xyflow/react` and laid out automatically with `dagre`. Each module and logic node (AND/OR/N-of-K) renders as a graph node, making deeply nested prerequisite chains easier to read than the flat JSON tree in Feature 8.
+
+![Interactive Prerequisite Graph](docs/screenshots/prereq-graph.png)
+
+*(Screenshot needed — not yet captured)*
+
+---
+
+### Feature 12 — Compare Plans Side-by-Side *(new in MS3)*
+
+Students can select up to 3 of their plans and compare workload breakdowns (MCs, hours, per-category breakdown) side-by-side in a single view — useful for weighing, for example, a normal-load plan against an exchange-semester plan. Reuses the existing per-semester workload endpoint (Feature 7) rather than introducing new backend logic.
+
+![Compare Plans](docs/screenshots/compare-plans.png)
+
+*(Screenshot needed — not yet captured)*
+
+---
+
+### Feature 13 — Shareable Plan Links
+
+Plan owners can enable/disable sharing via `POST`/`DELETE /plans/:id/share`, with a separate `POST /plans/:id/share/rotate` to invalidate an existing link and issue a new one. A public, unauthenticated endpoint (`GET /plans/shared/:token`) returns a read-only enriched view (module titles/credits, grouped by semester) exposing only the owner's display name — no email, no userId, no edit access.
+
+**Status:** the backend has been correct and unit/integration-tested since it was built, but the frontend Share modal generated links to a page (`/shared/:token`) that was never registered in the app's router — so every copied link 404'd. This was found and fixed while preparing this README ([PR #37](../../pull/37)): a read-only `shared.tsx` page now exists and the route is registered. **Pending:** merge and a manual click-through test (generate a link, open it in a private window) before relying on this for a demo.
 
 ---
 
@@ -141,18 +182,27 @@ orbital/
 │   ├── src/
 │   │   ├── routes/
 │   │   │   ├── auth.ts             # Register, login, GET/PUT /auth/me
-│   │   │   ├── profile.ts          # Profile + completed modules (CRUD)
+│   │   │   ├── profile.ts          # Profile + completed modules (CRUD), major validation
 │   │   │   ├── modules.ts          # Module search, prerequisites, tree
-│   │   │   ├── plans.ts            # Plans, slots, workload
+│   │   │   ├── plans.ts            # Plans, slots, workload, requirements, sharing
 │   │   │   └── recommendations.ts  # AI recommendations
 │   │   ├── middleware/
 │   │   │   └── requireAuth.ts      # JWT verification middleware
 │   │   ├── lib/
 │   │   │   ├── prisma.ts           # Prisma client singleton
-│   │   │   └── prereqParser.ts     # Prerequisite tokenizer + AST parser + evaluator
+│   │   │   ├── prereqParser.ts     # Prerequisite tokenizer + AST parser + evaluator
+│   │   │   └── gradRequirementsEngine.ts  # MC-bucket classification + 4-year recommendation
+│   │   ├── config/
+│   │   │   ├── gradRequirements.json      # CS+AI-focus ruleset
+│   │   │   └── nusMajors.ts               # Canonical list of 61 NUS primary majors
 │   │   ├── scripts/
 │   │   │   └── syncModules.ts      # NUSMods data sync script
-│   │   └── index.ts                # Server entry point
+│   │   ├── app.ts                  # Express app (routes + middleware wiring)
+│   │   └── index.ts                # Server entry point (imports app, calls listen)
+│   ├── tests/                      # Jest + Supertest suite
+│   │   ├── gradRequirementsEngine.test.ts
+│   │   ├── nusMajors.test.ts
+│   │   └── routes.test.ts
 │   └── prisma/
 │       ├── schema.prisma           # Database schema
 │       └── migrations/             # Migration history
@@ -163,13 +213,16 @@ orbital/
         │   ├── home.tsx                # Landing page
         │   ├── onboarding.tsx          # 3-step profile setup
         │   ├── recommendations.tsx     # AI recommendations
-        │   ├── prerequisites.tsx       # Prerequisite checker
+        │   ├── prerequisites.tsx       # Prerequisite checker + graph
+        │   ├── graduation.tsx          # Graduation requirements tracker
         │   ├── dashboard.tsx           # Authenticated home with sidebar layout
-        │   └── module-planning.tsx     # Plan builder + workload
+        │   ├── module-planning.tsx     # Plan builder + workload + compare + share
+        │   └── shared.tsx              # Public read-only shared-plan view
         ├── components/
         │   ├── login-form.tsx
         │   ├── signup-form.tsx
-        │   └── logout-button.tsx
+        │   ├── logout-button.tsx
+        │   └── graph/                  # PrerequisiteGraph, ModuleGraphNode, LogicGraphNode
         ├── context/
         │   └── AuthContext.tsx      # Global auth state
         └── lib/
@@ -194,7 +247,7 @@ model User {
 model Profile {
   id            String            @id @default(uuid())
   userId        String            @unique
-  major         String
+  major         String                        // validated against nusMajors.ts
   faculty       String
   yearOfStudy   Int
   cohortYear    String
@@ -221,13 +274,14 @@ model Module {
 }
 
 model Plan {
-  id        String         @id @default(uuid())
-  userId    String
-  name      String         @default("My Plan")
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  user      User           @relation(fields: [userId], references: [id])
-  semesters SemesterSlot[]
+  id         String         @id @default(uuid())
+  userId     String
+  name       String         @default("My Plan")
+  shareToken String?        @unique          // null = sharing disabled
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  user       User           @relation(fields: [userId], references: [id])
+  semesters  SemesterSlot[]
 }
 
 model SemesterSlot {
@@ -255,7 +309,7 @@ JWTs are stateless, so the server does not need to store session data. Tokens ar
 
 ### Why a rules engine + AI rather than pure AI?
 
-LLMs can hallucinate prerequisite rules. Deterministic logic in the backend handles prerequisite checking and workload calculation. The AI layer is used only for explanation and personalised ranking, so recommendations are always factually grounded.
+LLMs can hallucinate prerequisite rules. Deterministic logic in the backend handles prerequisite checking, workload calculation, and graduation-requirement classification. The AI layer is used only for explanation and personalised ranking, so recommendations are always factually grounded.
 
 ### Why Prisma over raw SQL?
 
@@ -263,7 +317,11 @@ Prisma generates a fully typed client from the schema, catching type mismatches 
 
 ### Why a hand-written parser over regex for prerequisites?
 
-NUSMods prerequisite strings contain nested AND/OR logic, N-of-K clauses, programme conditions, and grade requirements. Regex can extract flat module code lists but cannot represent the logical structure needed for eligibility checking and tree visualisation. A recursive descent parser produces a proper AST that the frontend can render as a tree and the evaluator can traverse to determine eligibility.
+NUSMods prerequisite strings contain nested AND/OR logic, N-of-K clauses, programme conditions, and grade requirements. Regex can extract flat module code lists but cannot represent the logical structure needed for eligibility checking and tree visualisation. A recursive descent parser produces a proper AST that the frontend can render as a tree/graph and the evaluator can traverse to determine eligibility.
+
+### Why a canonical majors list over free-text input?
+
+Free-text major entry meant students could type anything, which broke the CS-only gate on the graduation requirements tracker and made analytics unreliable. A hardcoded whitelist of 61 NUS primary majors (mirrored between backend and frontend) closes that gap; double majors were deliberately excluded to keep the combination space manageable within the project timeline.
 
 ---
 
@@ -317,13 +375,26 @@ async function getCachedModule(moduleCode: string) {
 }
 ```
 
+### Canonicalisation — Module Equivalence in the Requirements Engine
+
+NUS offers standard-track equivalents (e.g. `CS1010S`, `CS2030`) that satisfy the same requirement slot as their S-track canonical code (`CS1101S`, `CS2030S`). A single `canonicalize()` lookup is applied consistently everywhere a module code is compared against the requirements ruleset, so a completed alternate module is never misclassified or re-recommended as a duplicate.
+
+```typescript
+const MODULE_EQUIVALENTS: Record<string, string> = {
+  CS1010S: 'CS1101S', CS2030: 'CS2030S', CS2040: 'CS2040S', /* ... */
+};
+function canonicalize(code: string): string {
+  return MODULE_EQUIVALENTS[code] ?? code;
+}
+```
+
 ---
 
 ## Design Principles
 
 ### Separation of Concerns
 
-Each file has one clearly defined responsibility. Routes handle HTTP logic, middleware handles cross-cutting concerns, `lib/prisma.ts` owns the database connection, `lib/prereqParser.ts` owns prerequisite parsing, and `lib/api.ts` owns HTTP client configuration.
+Each file has one clearly defined responsibility. Routes handle HTTP logic, middleware handles cross-cutting concerns, `lib/prisma.ts` owns the database connection, `lib/prereqParser.ts` owns prerequisite parsing, `lib/gradRequirementsEngine.ts` owns requirements classification, and `lib/api.ts` (frontend) owns HTTP client configuration.
 
 ### Fail Fast
 
@@ -347,8 +418,10 @@ All user input is normalised (trimmed, uppercased for module codes, lowercased f
 |---|---|
 | `src/routes/` | One file per resource: auth, profile, modules, plans, recommendations |
 | `src/middleware/` | Cross-cutting request handling: JWT auth |
-| `src/lib/` | Shared utilities: database client, prerequisite parser |
+| `src/lib/` | Shared utilities: database client, prerequisite parser, requirements engine |
+| `src/config/` | Static config/rulesets: graduation requirements ruleset, NUS majors list |
 | `src/scripts/` | One-off operational scripts: NUSMods sync |
+| `tests/` | Jest + Supertest unit and integration tests |
 
 ---
 
@@ -399,11 +472,20 @@ npm run dev
 
 Server runs at `http://localhost:3001`
 
+### Running Tests
+
+```bash
+npm test
+```
+
+Runs the Jest + Supertest suite (`backend/tests/`) — see [Testing](#testing) below.
+
 ### Available Scripts
 
 ```bash
 npm run dev           # Start dev server with hot reload
 npm run build         # Compile TypeScript to JavaScript
+npm test              # Run Jest + Supertest suite
 npm run sync:modules  # Fetch and store all NUSMods data
 npx prisma studio     # Open visual database browser
 npx prisma migrate dev --name <name>  # Create a new migration
@@ -418,12 +500,7 @@ The backend is deployed on **Render** (Singapore region) and the frontend on **V
 | Frontend | https://courseway-frontend.vercel.app |
 | Backend | https://courseway-backend-w5ua.onrender.com |
 
-Production migrations are run by pointing the local Prisma CLI at the Render External Database URL:
-
-```powershell
-$env:DATABASE_URL = "<render-external-db-url>"
-npx prisma migrate deploy
-```
+The start script runs `prisma migrate deploy` before booting the server, so pending migrations are applied automatically on every deploy (fixed after an earlier incident where a migration was committed but never applied in production, causing 500s on any `Plan` query — see Known Issues).
 
 Note: Render's free tier spins down after 15 minutes of inactivity. The first request after a cold start may take 30-60 seconds. Subsequent requests are fast.
 
@@ -464,8 +541,12 @@ In production, set `VITE_API_URL` to the deployed backend URL (e.g. `https://cou
 | `/signup` | No | Registration form |
 | `/onboarding` | Yes | 3-step profile setup (major, modules, goals) |
 | `/recommendations` | Yes | AI module recommendations |
-| `/prerequisites` | No | Prerequisite checker and tree visualiser |
-| `/dashboard` | Yes | Authenticated home with sidebar layout and plan builder |
+| `/prerequisites` | No | Prerequisite checker and graph visualiser |
+| `/module-planning` | Yes | Plan builder, workload, compare plans, sharing |
+| `/graduation` | Yes | Graduation requirements tracker (CS majors) |
+| `/profile` | Yes | Profile settings |
+| `/shared/:token` | No | Public read-only view of a shared plan |
+| `/dashboard` | Yes | Authenticated home with sidebar layout |
 
 ---
 
@@ -501,6 +582,7 @@ Response: { "message": "Name updated", "user": { "id", "email", "name" } }
 POST /profile  (protected)
 Body:     { "major": "Computer Science", "faculty": "SoC", "yearOfStudy": 1, "cohortYear": "AY2024/25" }
 Response: { "message": "Profile saved", "profile": { ... } }
+          400 if major is not one of the recognised NUS majors
 
 GET /profile  (protected)
 Response: { "hasProfile": true, "profile": { ...fields, "completedMods": [...] } }
@@ -534,7 +616,7 @@ GET /modules/:code/prerequisites/tree?depth=3
 Response: { "moduleCode", "title", "depth", "prerequisiteTree": <resolved tree> }
   depth: default 3, max 5
   Each MODULE node has: { type, code, title, prerequisiteTree }
-  Other node types: AND/OR { children[] }, N_OF { n, children[] }, PROGRAMME { programmes[] }, OTHER { text }
+  Other node types: AND/OR { children[] }, N_OF { n, children[] }, PROGRAMME { programmes[] }, OTHER { text, label }
 ```
 
 ### Plans
@@ -595,6 +677,38 @@ Response: {
 }
 ```
 
+### Graduation Requirements
+
+```
+GET /plans/:id/requirements  (protected)
+Response (non-CS major):
+  { "available": false, "message": "Graduation requirements tracking is currently only available for the Computer Science major." }
+Response (CS major):
+  {
+    "available": true,
+    "programme", "focusArea", "totalMCsRequired", "totalMCsPlanned",
+    "categories": [{ key, label, type, satisfied, ...module_list or mc_total fields }],
+    "fourYearRecommendation": { recommendedPlan, unscheduled, mcGapsToFillWithElectives, note }
+  }
+```
+
+### Plan Sharing
+
+```
+POST /plans/:id/share  (protected)
+Response: { "message": "Sharing enabled", "shareToken": "..." }   // idempotent — reuses existing token if already enabled
+
+POST /plans/:id/share/rotate  (protected)
+Response: { "message": "Share link rotated", "shareToken": "..." }   // invalidates the old link
+
+DELETE /plans/:id/share  (protected)
+Response: { "message": "Sharing disabled" }
+
+GET /plans/shared/:token   // public, no auth required
+Response: { "planName", "ownerName", "slots": [...], "grouped": {...} }
+          404 if the token doesn't exist or sharing was disabled
+```
+
 ### Recommendations
 
 ```
@@ -610,10 +724,9 @@ Response: { "recommendations": [{ moduleCode, title, reason }] }
 ### Git Workflow
 
 - `main` — stable, protected. Direct pushes blocked via branch protection rules.
-- Feature branches use `feat/`, `fix/`, `docs/` prefixes.
+- Feature branches use `feat/`, `fix/`, `docs/`, `test/` prefixes.
 - Every change goes through a pull request.
 - GitHub Copilot reviews every PR automatically.
-
 
 ### CI/CD
 
@@ -638,12 +751,15 @@ jobs:
           node-version: '20'
       - run: npm install
       - run: npm run build
+      - run: npm test
 ```
 
 ### Security
 - Passwords hashed with bcrypt (10 salt rounds)
 - JWT tokens expire after 7 days
 - Emails normalised (lowercase + trimmed) before storage
+- Major input validated against a canonical whitelist rather than accepted as free text
+- Share links use `crypto.randomBytes(16)` tokens; shared view exposes only the owner's display name, never email or userId
 - `.env` files gitignored
 - Branch protection enabled on `main`
 - Input type validation on all API endpoints
@@ -653,9 +769,23 @@ jobs:
 
 ## Testing
 
+### Automated Testing
+
+The backend has a Jest + Supertest suite under `backend/tests/`, run via `npm test`:
+
+| File | Type | Covers |
+|---|---|---|
+| `gradRequirementsEngine.test.ts` | Unit | Module classification, canonicalisation (CS1010S/CS2030/CS2040 equivalence), MC-bucket totals — direct regression coverage for the bugs reported during MS2→MS3 development |
+| `nusMajors.test.ts` | Unit | Majors list integrity: no duplicates, exact case-sensitive matching |
+| `routes.test.ts` | Integration | Real Express app + Supertest against `/profile` and `/plans/:id/share`, with `prisma` mocked: auth-gating, majors whitelist validation, share-link idempotency and ownership checks, public no-auth access |
+
+Current result: **18 passing, 18 total**. Integration tests exercise the real routing and middleware (not simplified stand-ins); the database layer is mocked since there's no live Postgres instance in CI, so route *logic* is verified but not the raw SQL/Prisma queries themselves.
+
+Frontend automated tests (React Testing Library) were scoped for MS3 but not completed — see Known Issues.
+
 ### Manual Testing
 
-All API endpoints tested via Thunder Client during development:
+All API endpoints additionally tested via Thunder Client during development:
 
 | Endpoint | Cases Tested |
 |---|---|
@@ -663,7 +793,7 @@ All API endpoints tested via Thunder Client during development:
 | `POST /auth/login` | Valid login, wrong password, non-existent email |
 | `GET /auth/me` | Valid token, missing token, user not found |
 | `PUT /auth/me` | Valid name, empty name, missing token |
-| `POST /profile` | Valid profile, missing fields, string yearOfStudy |
+| `POST /profile` | Valid profile, missing fields, string yearOfStudy, invalid major |
 | `POST /profile/modules` | Valid array, empty array, duplicate modules |
 | `DELETE /profile/modules` | Remove existing, remove non-existent, no profile |
 | `GET /profile/modules` | With modules, empty profile |
@@ -675,13 +805,18 @@ All API endpoints tested via Thunder Client during development:
 | `POST /plans/:id/slots/bulk` | Multiple modules, partial duplicates |
 | `GET /plans/:id/slots` | Enriched with title and credits, grouped by semester |
 | `GET /plans/:id/workload` | Overloaded semester, project-heavy flag, incomplete data |
+| `GET /plans/:id/requirements` | CS major with gaps, CS major fully satisfied, non-CS major (available: false) |
+| `POST /plans/:id/share`, rotate, delete | Enable, idempotent re-enable, rotate, disable, ownership check |
+| `GET /plans/shared/:token` | Valid token, invalid token, disabled sharing |
 | `POST /recommendations` | With goals, without goals, missing profile |
 
-### Automated Testing (MS3 Plan)
-- Jest: unit tests for prereqParser (tokenizer, AST, evaluator)
-- Supertest: integration tests for all API endpoints against a test database
-- React Testing Library: component and user flow tests
+### User Testing
 
+User testing was run with students matched through the Orbital advisor-testing pool, using a self-guided task list covering: profile/account setup, building a semester plan, checking graduation requirements, AI recommendations, and semester workload. Testers reported back what worked, what was confusing or broken, and general notes for each task.
+
+**Status: in progress — 4 of 5 tester responses received.** Structured results (per-task findings) will be added here once the final response is in and findings are compiled.
+
+*(Placeholder — full results table to be added.)*
 
 ---
 
@@ -715,15 +850,16 @@ All API endpoints tested via Thunder Client during development:
 - [x] README updated for MS2
 
 ### MS3 — Extended System (27 July 2026)
-- [ ] Graduation requirements tracker
-- [ ] Interactive prerequisite chain graph visualisation
-- [ ] Drag and drop semester slot reordering
-- [ ] Plan variants: create and compare up to 3 plans side by side
-- [ ] Workload clash alerts
-- [ ] Shareable plan links
-- [ ] AI what-if simulator
-- [ ] Automated test suite (Jest + Supertest + React Testing Library)
-- [ ] Full user testing with structured findings
+- [x] Graduation requirements tracker (CS majors, MC-bucket classification, module equivalence, 4-year recommendation)
+- [x] Interactive prerequisite chain graph visualisation (`@xyflow/react` + `dagre`)
+- [x] Plan variants: compare up to 3 plans' workload side by side
+- [x] Shareable plan links — backend complete and tested; frontend routing bug found and fixed (PR #37), pending merge + manual verification
+- [x] Automated backend test suite (Jest + Supertest) — 18 passing tests
+- [ ] ~~Drag and drop semester slot reordering~~ — **descoped**, not attempted (dependency installed but never wired up; removed from MS3 scope for time)
+- [ ] Workload clash alerts — not attempted beyond the existing MC/hour overload flag from MS2
+- [ ] AI what-if simulator — not attempted
+- [ ] Frontend automated tests (React Testing Library) — not completed, backend suite only
+- [ ] Full user testing with structured findings — in progress, 4/5 responses received
 - [ ] Splashdown poster and demo video
 
 ---
@@ -732,10 +868,12 @@ All API endpoints tested via Thunder Client during development:
 
 | Issue | Priority | Planned Fix |
 |---|---|---|
-| Module recommendation pool capped at 50 | MS3 | Eligibility-based filtering using prereq evaluator |
-| No automated tests | MS3 | Jest + Supertest + RTL |
-| Frontend dashboard uses some placeholder data | MS3 | Connect all panels to live backend |
+| Module recommendation pool capped at 50 | Low | Eligibility-based filtering using prereq evaluator |
+| Frontend has no automated tests | Low | React Testing Library, if time permits post-MS3 |
+| Drag-and-drop reordering dependency (`@dnd-kit/*`) installed but unused | Low | Remove from `package.json` if not implemented, to avoid confusion |
+| Frontend dashboard uses some placeholder data | Low | Connect all panels to live backend |
 | `@prisma/client` and `pg` present in frontend `package.json` | Low | Remove unused backend dependencies from frontend |
+| Graduation requirements MC-bucket totals are estimated from moduleCode prefixes, not official NUS bucket tagging | Low | Documented as approximate in the API response itself (`notes` field) |
 
 ---
 
@@ -743,5 +881,5 @@ All API endpoints tested via Thunder Client during development:
 
 | Name | Role |
 |---|---|
-| Jaisev Sachdev | Backend, API design, database, AI integration, prerequisite parser |
-| Qi Zao (Brian) | Frontend, UI/UX, React components, onboarding flow, plan builder |
+| Jaisev Sachdev | Backend, API design, database, AI integration, prerequisite parser, testing |
+| Qi Zao (Brian) | Frontend, UI/UX, React components, onboarding flow, plan builder, graph visualisation |

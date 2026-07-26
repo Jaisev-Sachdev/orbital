@@ -69,10 +69,11 @@ Courseway solves this by:
 
 ## Use Cases
 
-The diagram below maps the actors and the actions Courseway supports. A **Student** is the only human actor; the **NUSMods API** and **Anthropic Claude API** act as supporting external systems that some use cases depend on.
+![Courseway use case diagram](docs/diagrams/use-case-diagram.png)
 
-<img width="919" height="885" alt="image" src="https://github.com/user-attachments/assets/db9f9f7c-e2b9-4e9d-b020-ddd635218048" />
+The **Student** is the primary actor. Use cases are grouped into authentication and profile, core planning, and advanced features. Two external systems support specific use cases: the **NUSMods API** supplies module and prerequisite data, and the **AI Service** (Anthropic Claude) generates module recommendations.
 
+Note that the shared-plan view is public: `GET /plans/shared/:token` requires no account, so a recipient opening a share link interacts with the system without authenticating.
 
 ---
 
@@ -291,9 +292,69 @@ orbital/
 
 ## Database Schema
 
-![Courseway entity-relationship diagram](docs/diagrams/er-diagram.png)
+```mermaid
+erDiagram
+    USER ||--o| PROFILE : "has"
+    USER ||--o{ PLAN : "owns"
+    PROFILE ||--o{ COMPLETED_MODULE : "records"
+    PLAN ||--o{ SEMESTER_SLOT : "contains"
+    MODULE ||..o{ COMPLETED_MODULE : "referenced by moduleCode"
+    MODULE ||..o{ SEMESTER_SLOT : "referenced by moduleCode"
 
-The Prisma schema below is the authoritative definition of the tables above.
+    USER {
+        uuid id PK
+        string email UK
+        string password "bcrypt hash"
+        string name "nullable"
+        datetime createdAt
+    }
+
+    PROFILE {
+        uuid id PK
+        uuid userId FK "unique, 1:1 with User"
+        string major "validated against nusMajors.ts"
+        string faculty
+        int yearOfStudy
+        string cohortYear
+    }
+
+    COMPLETED_MODULE {
+        uuid id PK
+        uuid profileId FK
+        string moduleCode "unique per profile"
+    }
+
+    MODULE {
+        string moduleCode PK
+        string title
+        int credits
+        string description "nullable"
+        string prerequisite "raw NUSMods text, nullable"
+        int[] workload "lecture tutorial lab project prep"
+        int[] semesters "e.g. 1 2"
+    }
+
+    PLAN {
+        uuid id PK
+        uuid userId FK
+        string name "default My Plan"
+        string shareToken UK "null = sharing disabled"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    SEMESTER_SLOT {
+        uuid id PK
+        uuid planId FK "cascade delete"
+        int year
+        int semester
+        string moduleCode "unique per plan+year+sem"
+    }
+```
+
+Dotted lines mark soft references: `CompletedModule.moduleCode` and `SemesterSlot.moduleCode` hold module codes as plain strings rather than declared foreign keys, so they are validated in application code (the slot endpoint checks the module exists before inserting) rather than enforced by the database.
+
+Prerequisites are **not** modelled as a table. `Module.prerequisite` stores the raw NUSMods requirement string, which is parsed into an AST at request time by `prereqParser.ts` (Feature 8). Graduation requirements are likewise config, not data: they live in `src/config/gradRequirements.json`.
 
 ```prisma
 model User {

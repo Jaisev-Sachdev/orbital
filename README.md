@@ -71,7 +71,8 @@ Courseway solves this by:
 
 The diagram below maps the actors and the actions Courseway supports. A **Student** is the only human actor; the **NUSMods API** and **Anthropic Claude API** act as supporting external systems that some use cases depend on.
 
-![Courseway use case diagram](docs/diagrams/use-case-diagram.png)
+<img width="919" height="885" alt="image" src="https://github.com/user-attachments/assets/db9f9f7c-e2b9-4e9d-b020-ddd635218048" />
+
 
 ---
 

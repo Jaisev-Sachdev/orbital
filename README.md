@@ -69,51 +69,11 @@ Courseway solves this by:
 
 ## Use Cases
 
-```mermaid
-graph LR
-    student(("Student"))
-    guest(("Anyone with<br/>a share link"))
+![Courseway use case diagram](docs/diagrams/use-case-diagram.png)
 
-    subgraph courseway ["Courseway"]
-        direction TB
-        uc1(["Register and log in"])
-        uc2(["Complete 3-step onboarding"])
-        uc3(["Manage display name"])
-        uc4(["Search NUS modules"])
-        uc5(["Build a 4-year plan"])
-        uc6(["View semester workload"])
-        uc7(["Compare up to 3 plans"])
-        uc8(["Get AI recommendations"])
-        uc9(["Explore prerequisite graph"])
-        uc10(["Track graduation progress"])
-        uc11(["Enable or rotate share link"])
-        uc12(["View a shared plan"])
-    end
+The **Student** is the primary actor. Use cases are grouped into authentication and profile, core planning, and advanced features. Two external systems support specific use cases: the **NUSMods API** supplies module and prerequisite data, and the **AI Service** (Anthropic Claude) generates module recommendations.
 
-    nusmods[/"NUSMods API"/]
-    claude[/"Anthropic Claude API"/]
-
-    student --> uc1
-    student --> uc2
-    student --> uc3
-    student --> uc4
-    student --> uc5
-    student --> uc6
-    student --> uc7
-    student --> uc8
-    student --> uc9
-    student --> uc10
-    student --> uc11
-    guest --> uc12
-
-    uc2 -.-> nusmods
-    uc4 -.-> nusmods
-    uc8 -.-> claude
-```
-
-There are two human actors. The **Student** is the authenticated user and drives every use case except one. **Anyone with a share link** is an unauthenticated visitor who can open a shared plan read-only (`GET /plans/shared/:token`) without an account, which is why plan sharing is drawn as two separate use cases rather than one.
-
-Dotted arrows mark use cases that depend on an external system: module search and onboarding read from the **NUSMods API** (synced into PostgreSQL ahead of time), and recommendations call the **Anthropic Claude API** at request time.
+Note that the shared-plan view is public: `GET /plans/shared/:token` requires no account, so a recipient opening a share link interacts with the system without authenticating.
 
 ---
 

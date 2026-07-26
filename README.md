@@ -8,6 +8,43 @@ NUS Orbital 2026 · Apollo 11 · THE Team · Courseway
 
 ---
 
+## Table of Contents
+
+- [What is Courseway?](#what-is-courseway)
+- [Motivation](#motivation)
+- [Tech Stack](#tech-stack)
+- [System Architecture](#system-architecture)
+- [Features](#features)
+  - [Feature 1: AI-Powered Module Recommendation Engine](#feature-1-ai-powered-module-recommendation-engine)
+  - [Feature 2: Goal-Aware Recommendations](#feature-2-goal-aware-recommendations)
+  - [Feature 3: NUSMods Module Search](#feature-3-nusmods-module-search)
+  - [Feature 4: Guided 3-Step Onboarding Flow](#feature-4-guided-3-step-onboarding-flow)
+  - [Feature 5: User Authentication with Session Persistence](#feature-5-user-authentication-with-session-persistence)
+  - [Feature 6: 4-Year Academic Plan Builder](#feature-6-4-year-academic-plan-builder)
+  - [Feature 7: Semester Workload Estimator](#feature-7-semester-workload-estimator)
+  - [Feature 8: Recursive Prerequisite Parser + Tree Endpoint](#feature-8-recursive-prerequisite-parser--tree-endpoint)
+  - [Feature 9: User Profile with Display Name](#feature-9-user-profile-with-display-name)
+  - [Feature 10: Graduation Requirements Tracker](#feature-10-graduation-requirements-tracker)
+  - [Feature 11: Interactive Prerequisite Graph](#feature-11-interactive-prerequisite-graph)
+  - [Feature 12: Compare Plans Side-by-Side](#feature-12-compare-plans-side-by-side)
+  - [Feature 13: Shareable Plan Links](#feature-13-shareable-plan-links)
+- [Project Structure](#project-structure)
+- [Database Schema](#database-schema)
+- [Design Decisions](#design-decisions)
+- [Design Patterns](#design-patterns)
+- [Design Principles](#design-principles)
+- [Code Modularisation](#code-modularisation)
+- [Backend Setup](#backend-setup)
+- [Frontend Setup](#frontend-setup)
+- [API Documentation](#api-documentation)
+- [Software Engineering Practices](#software-engineering-practices)
+- [Testing](#testing)
+- [Milestone Progress](#milestone-progress)
+- [Known Issues / Technical Debt](#known-issues--technical-debt)
+- [Team](#team)
+
+---
+
 ## What is Courseway?
 
 Courseway helps NUS students plan their academic journey more effectively. Students input their major, year of study, and completed modules to receive personalised, AI-powered module recommendations and build a 4-year academic plan.

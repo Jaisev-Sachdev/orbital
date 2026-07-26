@@ -136,7 +136,7 @@ Users can set and update a display name via `PUT /auth/me`. `GET /auth/me` retur
 
 ---
 
-### Feature 10: Graduation Requirements Tracker *(new in MS3)*
+### Feature 10: Graduation Requirements Tracker
 
 For Computer Science majors, the requirements engine classifies every planned module into a bucket (foundation, math & science, common curriculum, breadth & depth) using an explicit module-list match plus a moduleCode-prefix fallback, and reports progress against each category alongside a 4-year recommendation of remaining required modules. A module-equivalence map (e.g. `CS1010S` → `CS1101S`, `CS2030` → `CS2030S`) means non-S-track modules correctly satisfy the S-track requirement slot instead of showing up as a duplicate recommendation. Students in any other major see a clear "not yet supported for your major" message instead of incorrect CS-specific results.
 
@@ -146,7 +146,7 @@ For Computer Science majors, the requirements engine classifies every planned mo
 
 ---
 
-### Feature 11: Interactive Prerequisite Graph *(new in MS3)*
+### Feature 11: Interactive Prerequisite Graph
 
 A node-graph visualisation of a module's prerequisite chain, built with `@xyflow/react` and laid out automatically with `dagre`. Each module and logic node (AND/OR/N-of-K) renders as a graph node, making deeply nested prerequisite chains easier to read than the flat JSON tree in Feature 8.
 
@@ -156,7 +156,7 @@ A node-graph visualisation of a module's prerequisite chain, built with `@xyflow
 
 ---
 
-### Feature 12: Compare Plans Side-by-Side *(new in MS3)*
+### Feature 12: Compare Plans Side-by-Side
 
 Students can select up to 3 of their plans and compare workload breakdowns (MCs, hours, per-category breakdown) side-by-side in a single view, useful for weighing, for example, a normal-load plan against an exchange-semester plan. Reuses the existing per-semester workload endpoint (Feature 7) rather than introducing new backend logic.
 
@@ -318,10 +318,6 @@ Prisma generates a fully typed client from the schema, catching type mismatches 
 ### Why a hand-written parser over regex for prerequisites?
 
 NUSMods prerequisite strings contain nested AND/OR logic, N-of-K clauses, programme conditions, and grade requirements. Regex can extract flat module code lists but cannot represent the logical structure needed for eligibility checking and tree visualisation. A recursive descent parser produces a proper AST that the frontend can render as a tree/graph and the evaluator can traverse to determine eligibility.
-
-### Why a canonical majors list over free-text input?
-
-Free-text major entry meant students could type anything, which broke the CS-only gate on the graduation requirements tracker and made analytics unreliable. A hardcoded whitelist of 61 NUS primary majors (mirrored between backend and frontend) closes that gap; double majors were deliberately excluded to keep the combination space manageable within the project timeline.
 
 ---
 

@@ -19,10 +19,7 @@ interface SharedPlanResponse {
   grouped: Record<string, SharedSlot[]>
 }
 
-// Public, unauthenticated read-only view for a shared plan link
-// (GET /plans/shared/:token requires no auth). Reachable at /shared/:token
-// — see routes.ts. No edit controls are rendered; the backend response
-// itself never includes userId/email, only the owner's display name.
+// public, unauthenticated read-only view for a shared plan link
 export default function SharedPlan() {
   const { token } = useParams()
   const [data, setData] = useState<SharedPlanResponse | null>(null)

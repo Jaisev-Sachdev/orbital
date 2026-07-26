@@ -171,7 +171,7 @@ Students create a named plan and assign modules to specific year/semester slots.
 
 For each semester in a plan, the backend computes total MCs, total weekly hours broken down by category (lecture, tutorial, lab, project, prep), and flags semesters that are overloaded (more than 23 MCs or 50 hours/week) or project-heavy (2 or more modules with 6 or more combined lab and project hours).
 
-<img width="2193" height="1627" alt="image" src="https://github.com/user-attachments/assets/0c787a86-0c57-4263-9648-19638ad430d8" />
+<img width="2193" height="1627" alt="image" src="https://github.com/user-attachments/assets/0c787a86-0c57-4263-9648-19838ad430d8" />
 
 
 ---

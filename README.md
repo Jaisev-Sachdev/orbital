@@ -15,10 +15,10 @@ NUS Orbital 2026 · Apollo 11 · THE Team · Courseway
 - [Tech Stack](#tech-stack)
 - [System Architecture](#system-architecture)
 - [Features](#features)
-  - [Feature 1: AI-Powered Module Recommendation Engine](#feature-1-ai-powered-module-recommendation-engine)
-  - [Feature 2: Goal-Aware Recommendations](#feature-2-goal-aware-recommendations)
-  - [Feature 3: NUSMods Module Search](#feature-3-nusmods-module-search)
-  - [Feature 4: Guided 3-Step Onboarding Flow](#feature-4-guided-3-step-onboarding-flow)
+  - [Feature 1: Guided 3-Step Onboarding Flow](#feature-1-guided-3-step-onboarding-flow)
+  - [Feature 2: NUSMods Module Search](#feature-2-nusmods-module-search)
+  - [Feature 3: AI-Powered Module Recommendation Engine](#feature-3-ai-powered-module-recommendation-engine)
+  - [Feature 4: Goal-Aware Recommendations](#feature-4-goal-aware-recommendations)
   - [Feature 5: User Authentication with Session Persistence](#feature-5-user-authentication-with-session-persistence)
   - [Feature 6: 4-Year Academic Plan Builder](#feature-6-4-year-academic-plan-builder)
   - [Feature 7: Semester Workload Estimator](#feature-7-semester-workload-estimator)
@@ -101,7 +101,25 @@ Courseway solves this by:
 
 ## Features
 
-### Feature 1: AI-Powered Module Recommendation Engine
+### Feature 1: Guided 3-Step Onboarding Flow
+
+A multi-step onboarding form that collects profile data, completed modules, and goals before generating a personalised plan. Major is validated against a canonical list of 61 NUS primary majors (backend whitelist, `src/config/nusMajors.ts`) rather than accepting free text; this also gates which students see the graduation requirements tracker (Feature 10). Each step is validated before proceeding. Module search is debounced (300ms) to avoid excessive API calls.
+
+<img width="1992" height="1372" alt="image" src="https://github.com/user-attachments/assets/1aab6d03-3d38-4e94-9326-c0ac1f79e94d" />
+
+
+---
+
+### Feature 2: NUSMods Module Search
+
+Real-time search across all 7139 NUS modules. The backend queries PostgreSQL with a case-insensitive OR filter on both `moduleCode` and `title`, returning up to 20 results. Module data was synced from the NUSMods public API using a batch sync script.
+
+<img width="1992" height="1372" alt="image" src="https://github.com/user-attachments/assets/6d2b6ac7-9a18-47e8-9483-723c13aa90c3" />
+
+
+---
+
+### Feature 3: AI-Powered Module Recommendation Engine
 
 The backend fetches a student's profile and completed modules, infers relevant module prefixes, builds a filtered pool from 7139 NUSMods modules, and constructs a structured prompt for Claude. The AI returns exactly 3 recommendations with one-sentence explanations grounded in real module data.
 
@@ -111,29 +129,11 @@ The backend fetches a student's profile and completed modules, infers relevant m
 
 ---
 
-### Feature 2: Goal-Aware Recommendations
+### Feature 4: Goal-Aware Recommendations
 
 During onboarding Step 3, students select focus areas (AI/ML, Systems, Exchange Semester etc.) and optionally write free-text goals. These are passed as a `goals` field in `POST /recommendations`. The backend injects them directly into the AI prompt with an explicit instruction to weight recommendations toward those goals.
 
 <img width="1992" height="1372" alt="image" src="https://github.com/user-attachments/assets/6a6cf929-5207-470c-966e-7499ab1226f2" />
-
-
----
-
-### Feature 3: NUSMods Module Search
-
-Real-time search across all 7139 NUS modules. The backend queries PostgreSQL with a case-insensitive OR filter on both `moduleCode` and `title`, returning up to 20 results. Module data was synced from the NUSMods public API using a batch sync script.
-
-<img width="1992" height="1372" alt="image" src="https://github.com/user-attachments/assets/6d2b6ac7-9a18-47e8-9483-723c13aa90c3" />
-
-
----
-
-### Feature 4: Guided 3-Step Onboarding Flow
-
-A multi-step onboarding form that collects profile data, completed modules, and goals before generating a personalised plan. Major is validated against a canonical list of 61 NUS primary majors (backend whitelist, `src/config/nusMajors.ts`) rather than accepting free text; this also gates which students see the graduation requirements tracker (Feature 10). Each step is validated before proceeding. Module search is debounced (300ms) to avoid excessive API calls.
-
-<img width="1992" height="1372" alt="image" src="https://github.com/user-attachments/assets/1aab6d03-3d38-4e94-9326-c0ac1f79e94d" />
 
 
 ---

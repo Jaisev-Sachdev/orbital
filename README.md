@@ -160,7 +160,8 @@ Students create a named plan and assign modules to specific year/semester slots.
 
 For each semester in a plan, the backend computes total MCs, total weekly hours broken down by category (lecture, tutorial, lab, project, prep), and flags semesters that are overloaded (more than 23 MCs or 50 hours/week) or project-heavy (2 or more modules with 6 or more combined lab and project hours).
 
-![Workload](docs/screenshots/workload.png)
+<img width="2193" height="1627" alt="image" src="https://github.com/user-attachments/assets/0c787a86-0c57-4263-9648-19838ad430d8" />
+
 
 ---
 
@@ -170,7 +171,7 @@ A hand-written recursive descent parser converts raw NUSMods prerequisite string
 
 This is the data layer behind both the JSON-style prerequisite checker (below) and the graph visualisation (Feature 11).
 
-![Prerequisite Checker](docs/screenshots/tree.png)
+<img width="2268" height="1993" alt="image" src="https://github.com/user-attachments/assets/d6bce555-46f4-4194-8848-16af7fe08380" />
 
 ---
 
@@ -178,15 +179,16 @@ This is the data layer behind both the JSON-style prerequisite checker (below) a
 
 Users can set and update a display name via `PUT /auth/me`. `GET /auth/me` returns the user's id, email, name, and account creation date.
 
+<img width="2268" height="1699" alt="image" src="https://github.com/user-attachments/assets/1d67f67e-1b9c-4add-8e78-077919e9633e" />
+
+
 ---
 
 ### Feature 10: Graduation Requirements Tracker
 
 For Computer Science majors, the requirements engine classifies every planned module into a bucket (foundation, math & science, common curriculum, breadth & depth) using an explicit module-list match plus a moduleCode-prefix fallback, and reports progress against each category alongside a 4-year recommendation of remaining required modules. A module-equivalence map (e.g. `CS1010S` → `CS1101S`, `CS2030` → `CS2030S`) means non-S-track modules correctly satisfy the S-track requirement slot instead of showing up as a duplicate recommendation. Students in any other major see a clear "not yet supported for your major" message instead of incorrect CS-specific results.
 
-![Graduation Requirements Tracker](docs/screenshots/graduation.png)
-
-*(Screenshot needed, not yet captured)*
+<img width="2268" height="1699" alt="image" src="https://github.com/user-attachments/assets/53aa9a30-3410-4e90-9fb2-9e74aacb56f1" />
 
 ---
 
@@ -194,9 +196,8 @@ For Computer Science majors, the requirements engine classifies every planned mo
 
 A node-graph visualisation of a module's prerequisite chain, built with `@xyflow/react` and laid out automatically with `dagre`. Each module and logic node (AND/OR/N-of-K) renders as a graph node, making deeply nested prerequisite chains easier to read than the flat JSON tree in Feature 8.
 
-![Interactive Prerequisite Graph](docs/screenshots/prereq-graph.png)
+<img width="2268" height="1993" alt="image" src="https://github.com/user-attachments/assets/95220153-1f23-4a88-9d73-ae1e1fdcc4f8" />
 
-*(Screenshot needed, not yet captured)*
 
 ---
 
@@ -204,9 +205,8 @@ A node-graph visualisation of a module's prerequisite chain, built with `@xyflow
 
 Students can select up to 3 of their plans and compare workload breakdowns (MCs, hours, per-category breakdown) side-by-side in a single view, useful for weighing, for example, a normal-load plan against an exchange-semester plan. Reuses the existing per-semester workload endpoint (Feature 7) rather than introducing new backend logic.
 
-![Compare Plans](docs/screenshots/compare-plans.png)
+<img width="2268" height="1699" alt="image" src="https://github.com/user-attachments/assets/e928845d-3d49-467e-96de-36fcb1c44189" />
 
-*(Screenshot needed, not yet captured)*
 
 ---
 
@@ -214,7 +214,9 @@ Students can select up to 3 of their plans and compare workload breakdowns (MCs,
 
 Plan owners can enable/disable sharing via `POST`/`DELETE /plans/:id/share`, with a separate `POST /plans/:id/share/rotate` to invalidate an existing link and issue a new one. A public, unauthenticated endpoint (`GET /plans/shared/:token`) returns a read-only enriched view (module titles/credits, grouped by semester) exposing only the owner's display name: no email, no userId, no edit access.
 
-**Status:** the backend has been correct and unit/integration-tested since it was built, but the frontend Share modal generated links to a page (`/shared/:token`) that was never registered in the app's router, so every copied link 404'd. This was found and fixed in [PR #37](../../pull/37) (merged): a read-only `shared.tsx` page now exists and the route is registered. **Still pending:** a manual click-through test (generate a link, open it in a private window, confirm the 404 state for a bad token) before relying on this for a demo.
+<img width="2268" height="1699" alt="image" src="https://github.com/user-attachments/assets/2abaee25-3dab-4b1f-93c0-70ead12e0f8a" />
+
+<img width="2268" height="1675" alt="image" src="https://github.com/user-attachments/assets/ba882b32-a50d-4a4a-9070-73522fc7fbfd" />
 
 ---
 

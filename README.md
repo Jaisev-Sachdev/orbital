@@ -105,7 +105,9 @@ Courseway solves this by:
 
 The backend fetches a student's profile and completed modules, infers relevant module prefixes, builds a filtered pool from 7139 NUSMods modules, and constructs a structured prompt for Claude. The AI returns exactly 3 recommendations with one-sentence explanations grounded in real module data.
 
-![AI Module Suggestions](docs/screenshots/recommendations.png)
+<img width="1992" height="1372" alt="image" src="https://github.com/user-attachments/assets/9f31919c-bf79-4591-98d4-9591e24f799c" />
+
+
 
 ---
 
@@ -113,7 +115,8 @@ The backend fetches a student's profile and completed modules, infers relevant m
 
 During onboarding Step 3, students select focus areas (AI/ML, Systems, Exchange Semester etc.) and optionally write free-text goals. These are passed as a `goals` field in `POST /recommendations`. The backend injects them directly into the AI prompt with an explicit instruction to weight recommendations toward those goals.
 
-![Onboarding Step 3: Goals](docs/screenshots/onboarding-step3.png)
+<img width="1992" height="1372" alt="image" src="https://github.com/user-attachments/assets/6a6cf929-5207-470c-966e-7499ab1226f2" />
+
 
 ---
 
@@ -121,7 +124,8 @@ During onboarding Step 3, students select focus areas (AI/ML, Systems, Exchange 
 
 Real-time search across all 7139 NUS modules. The backend queries PostgreSQL with a case-insensitive OR filter on both `moduleCode` and `title`, returning up to 20 results. Module data was synced from the NUSMods public API using a batch sync script.
 
-![Onboarding Step 2: Module Search](docs/screenshots/onboarding-step2.png)
+<img width="1992" height="1372" alt="image" src="https://github.com/user-attachments/assets/6d2b6ac7-9a18-47e8-9483-723c13aa90c3" />
+
 
 ---
 
@@ -129,7 +133,8 @@ Real-time search across all 7139 NUS modules. The backend queries PostgreSQL wit
 
 A multi-step onboarding form that collects profile data, completed modules, and goals before generating a personalised plan. Major is validated against a canonical list of 61 NUS primary majors (backend whitelist, `src/config/nusMajors.ts`) rather than accepting free text; this also gates which students see the graduation requirements tracker (Feature 10). Each step is validated before proceeding. Module search is debounced (300ms) to avoid excessive API calls.
 
-![Onboarding Step 1: Profile](docs/screenshots/onboarding-step1.png)
+<img width="1992" height="1372" alt="image" src="https://github.com/user-attachments/assets/1aab6d03-3d38-4e94-9326-c0ac1f79e94d" />
+
 
 ---
 
@@ -137,7 +142,8 @@ A multi-step onboarding form that collects profile data, completed modules, and 
 
 Full register/login/logout flow with JWT tokens. Passwords are hashed with bcrypt before storage. Tokens are stored in `localStorage` and attached to every request via an Axios interceptor. Protected routes redirect unauthenticated users to login. Tokens expire after 7 days.
 
-![Signup Page](docs/screenshots/signup.png)
+<img width="974" height="694" alt="image" src="https://github.com/user-attachments/assets/c221c78d-4d87-4466-9328-2527f8c838e1" />
+
 
 ---
 
@@ -145,7 +151,8 @@ Full register/login/logout flow with JWT tokens. Passwords are hashed with bcryp
 
 Students create a named plan and assign modules to specific year/semester slots. Slots are enriched with title and credits from the module table. The plan can be renamed or deleted. Multiple plans are supported for comparing different degree paths (see Feature 12).
 
-![Plan Builder](docs/screenshots/plan-builder.png)
+<img width="2193" height="1627" alt="image" src="https://github.com/user-attachments/assets/f716788e-525e-468f-9642-90486bc111fc" />
+
 
 ---
 

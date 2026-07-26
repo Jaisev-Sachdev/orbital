@@ -1,0 +1,109 @@
+@startuml courseway-use-case
+' Courseway use case diagram (NUS Orbital 2026, Apollo 11, THE Team)
+' Render:  java -jar plantuml.jar use-case-diagram.puml
+'          or the PlantUML extension in VS Code (Alt+D to preview)
+'          or paste into https://www.plantuml.com/plantuml
+'
+' Every use case below corresponds to a shipped feature in the MS3 README.
+' Deliberately excluded: the AI what-if simulator (not attempted) and any
+' notion of "plan variants" as a distinct entity (variants are simply
+' multiple Plan rows owned by the same user).
+
+left to right direction
+
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam packageStyle rectangle
+
+skinparam actor {
+  BorderColor #333333
+  BackgroundColor white
+}
+skinparam usecase {
+  BorderColor #3B82F6
+  BackgroundColor #DBEAFE
+  FontColor #1E3A5F
+  ArrowColor #6B7280
+}
+skinparam rectangle {
+  BorderColor #9CA3AF
+  FontColor #374151
+}
+
+actor "Student" as student
+actor "Share link\nrecipient" as guest
+
+rectangle "Courseway Web Application" {
+
+  package "Authentication and Profile" {
+    usecase "Register and log in" as UC1
+    usecase "Set up academic profile\n(major, faculty, year, cohort)" as UC2
+    usecase "Manage completed modules" as UC3
+    usecase "Update display name" as UC4
+  }
+
+  package "Core Planning" {
+    usecase "Search NUS modules" as UC5
+    usecase "Build 4-year plan" as UC6
+    usecase "View semester workload" as UC7
+    usecase "Compare up to 3 plans" as UC8 #DCFCE7
+  }
+
+  package "Guidance" {
+    usecase "Get AI module\nrecommendations" as UC9
+    usecase "View prerequisite chain" as UC10
+    usecase "Track graduation\nrequirements" as UC11 #DCFCE7
+  }
+
+  package "Sharing" {
+    usecase "Generate share link" as UC12 #DCFCE7
+    usecase "View shared plan\n(read only)" as UC13 #DCFCE7
+  }
+}
+
+rectangle "<<system>>\nNUSMods API" as nusmods #F3F4F6
+rectangle "<<system>>\nAnthropic Claude API" as claude #F3F4F6
+
+student --> UC1
+student --> UC2
+student --> UC3
+student --> UC4
+student --> UC5
+student --> UC6
+student --> UC7
+student --> UC8
+student --> UC9
+student --> UC10
+student --> UC11
+student --> UC12
+
+guest --> UC13
+
+UC6 ..> UC5 : <<include>>
+UC8 ..> UC7 : <<include>>
+UC9 ..> UC2 : <<include>>
+
+UC5  --> nusmods
+UC10 --> nusmods
+UC9  --> claude
+
+note bottom of UC11
+  Computer Science majors only.
+  Other majors receive an explicit
+  "not yet supported" response.
+end note
+
+note bottom of UC13
+  Public endpoint, no account required
+  (GET /plans/shared/:token)
+end note
+
+legend bottom
+  |= Colour |= Meaning |
+  | <#DBEAFE> | Delivered by MS2 |
+  | <#DCFCE7> | Added in MS3 |
+endlegend
+
+@enduml

@@ -12,6 +12,7 @@ NUS Orbital 2026 · Apollo 11 · THE Team · Courseway
 
 - [What is Courseway?](#what-is-courseway)
 - [Motivation](#motivation)
+- [Use Cases](#use-cases)
 - [Tech Stack](#tech-stack)
 - [System Architecture](#system-architecture)
 - [Features](#features)
@@ -66,6 +67,14 @@ Courseway solves this by:
 
 ---
 
+## Use Cases
+
+The diagram below maps the actors and the actions Courseway supports. A **Student** is the only human actor; the **NUSMods API** and **Anthropic Claude API** act as supporting external systems that some use cases depend on.
+
+![Courseway use case diagram](docs/diagrams/use-case-diagram.png)
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -83,19 +92,21 @@ Courseway solves this by:
 
 ## System Architecture
 
+```mermaid
+graph TD
+    FE["React Frontend<br/>React Router v7 · port 5173<br/>Vercel"]
+    BE["Express Backend<br/>Node + TypeScript · port 3001<br/>Render"]
+    DB[("PostgreSQL<br/>via Prisma ORM")]
+    NM["NUSMods API<br/>(public)"]
+    AN["Anthropic API<br/>(Claude)"]
+
+    FE <-->|HTTP / REST + JWT| BE
+    BE -->|queries and migrations| DB
+    BE -->|batch module sync| NM
+    BE -->|recommendation prompts| AN
 ```
-┌──────────────────────     HTTP/REST      ┌──────────────────────────
-│  React Frontend  │ ◄───────────────── ► │   Express Backend     │
-│  (port 5173)     │                    │   (port 3001)         │
-└───────────────────                    └──────────────────────────
-                                                   │
-                              ┌──────────────────────┼──────────────────────┐
-                              │                    │                    │
-                    ┌────────▼────────┐  ┌───────▼────────┐  ┌───────▼────────┐
-                    │   PostgreSQL DB   │  │  NUSMods API   │  │ Anthropic API  │
-                    │  (Prisma ORM)     │  │  (public)      │  │ (Claude AI)    │
-                    └──────────────────  └────────────────  └────────────────
-```
+
+The frontend never talks to the database or to either external API directly: every call goes through the Express backend, which owns authentication, the rules engine, and both outbound integrations.
 
 ---
 
@@ -278,6 +289,10 @@ orbital/
 ---
 
 ## Database Schema
+
+![Courseway entity-relationship diagram](docs/diagrams/er-diagram.png)
+
+The Prisma schema below is the authoritative definition of the tables above.
 
 ```prisma
 model User {
@@ -770,6 +785,8 @@ Response: { "recommendations": [{ moduleCode, title, reason }] }
 - Every change goes through a pull request.
 - GitHub Copilot reviews every PR automatically.
 
+![Branch list showing feature branches and protected main](docs/diagrams/github-branches.png)
+
 ### CI/CD
 
 ```yaml
@@ -795,6 +812,10 @@ jobs:
       - run: npm run build
       - run: npm test
 ```
+
+Every push and pull request against `main` runs the backend build and the full Jest + Supertest suite.
+
+![GitHub Actions CI runs](docs/diagrams/github-actions-ci.png)
 
 ### Security
 - Passwords hashed with bcrypt (10 salt rounds)

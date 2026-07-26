@@ -74,7 +74,7 @@ Courseway solves this by:
 | Styling | Tailwind CSS + shadcn/ui |
 | Backend | Node.js + Express + TypeScript |
 | Database | PostgreSQL + Prisma ORM (v6) |
-| AI | Anthropic Claude API (claude-sonnet-4) |
+| AI | Anthropic Claude API (claude-sonnet-4-5) |
 | Module Data | NUSMods Public API (2025-2026) |
 | Testing | Jest + Supertest (backend) |
 | Hosting | Vercel (frontend) + Render (backend + PostgreSQL) |
@@ -315,7 +315,7 @@ model Module {
   credits      Int
   description  String?
   prerequisite String?           // raw NUSMods prerequisite text
-  workload     Int[]   @default([])  // [lecture, tutorial, lab, project, prep] hrs/week (integer tenths)
+  workload     Int[]   @default([])  // [lecture, tutorial, lab, project, prep] hrs/week, from NUSMods
   semesters    Int[]             // e.g. [1, 2] = offered both sems
 }
 

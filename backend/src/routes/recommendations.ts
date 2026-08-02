@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
 import prisma from '../lib/prisma';
 import requireAuth, { AuthRequest } from '../middleware/requireAuth';
+import { buildModulePoolWhere, widenModulePoolWhere } from '../lib/modulePool';
 
 const router = Router();
 
@@ -9,6 +10,8 @@ if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not defined in environment variables');
 }
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const MODULE_POOL_SIZE = 50;
 
 // POST /recommendations
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
@@ -35,29 +38,30 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
 
   const completedCodes = profile.completedMods.map(m => m.moduleCode);
 
-  // Extract prefixes from completed modules to infer relevant departments
-  const completedPrefixes = [...new Set(
-    completedCodes
-      .map(code => code.match(/^[A-Z]+/)?.[0] ?? '')
-      .filter(p => p.length > 0)
-  )];
+  // 2. Build the candidate pool, scoped to the student's declared major.
+  //
+  // This previously inferred prefixes from the student's *completed* modules,
+  // which meant anyone who had taken a module outside their department was
+  // offered a pool from that department instead of their own. MS3 user testing
+  // surfaced it: a Statistics and Economics student was recommended CS modules.
+  const poolWhere = buildModulePoolWhere({ major: profile.major, completedCodes });
 
-  // 2. Fetch some eligible modules to give the AI context
-  const availableModules = await prisma.module.findMany({
-    where: {
-      moduleCode: {
-        notIn: completedCodes,
-      },
-      semesters: { isEmpty: false },
-      ...(completedPrefixes.length > 0 && {
-        OR: completedPrefixes.map(prefix => ({
-          moduleCode: { startsWith: prefix }
-        }))
-      })
-    },
-    take: 50,
+  let availableModules = await prisma.module.findMany({
+    where: poolWhere,
+    take: MODULE_POOL_SIZE,
     orderBy: { moduleCode: 'asc' }
   });
+
+  // If the major-scoped pool is empty (unmapped major, or a prefix list that
+  // matches nothing in the synced NUSMods data), fall back to an unfiltered
+  // pool. A generic recommendation is a better failure mode than none.
+  if (availableModules.length === 0) {
+    availableModules = await prisma.module.findMany({
+      where: widenModulePoolWhere(poolWhere),
+      take: MODULE_POOL_SIZE,
+      orderBy: { moduleCode: 'asc' }
+    });
+  }
 
   // 3. Build the prompt — include goals if provided
   const prompt = `You are an academic advisor for NUS (National University of Singapore).
@@ -74,6 +78,7 @@ Here are some available modules the student has not yet taken:
 ${availableModules.map(m => `- ${m.moduleCode}: ${m.title} (${m.credits} MCs) | Prerequisites: ${m.prerequisite ?? 'None'}`).join('\n')}
 
 Recommend exactly 3 modules for this student to take next semester.
+Only recommend modules from the list above.
 Consider: prerequisite satisfaction, workload balance, relevance to their major${goals ? ', and the student\'s stated goals and focus areas' : ''}.
 
 Respond in JSON only. No explanation outside the JSON. Use this exact format:

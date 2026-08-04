@@ -50,8 +50,7 @@ beforeEach(() => {
 });
 
 describe('POST /recommendations pool scoping', () => {
-  // The end-to-end version of the MS3 finding: an Economics student who has
-  // taken CS modules must not be handed a CS candidate pool.
+  // The end-to-end version of the MS3 finding: an Economics student who has  taken CS modules must not be handed a CS candidate pool.
   test('Economics student with completed CS modules gets an EC-scoped pool', async () => {
     (prisma.profile.findUnique as jest.Mock).mockResolvedValue(
       asProfile('Economics', ['CS1101S', 'CS2030S', 'EC1101E'])

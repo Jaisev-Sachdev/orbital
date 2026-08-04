@@ -1,12 +1,8 @@
 /**
  * Letter avatars derived from the display name a user gives at signup.
- *
- * Deliberately not real image uploads: Render's filesystem is ephemeral, so
- * uploads would need external object storage, and no user testing feedback
- * asked for profile pictures. Initials give the same visual anchor for free.
+ * Deliberately not real image uploads
  */
 
-/** Placeholder names the sidebar shows before or instead of real data. */
 const PLACEHOLDER_NAMES = new Set([
   'loading...',
   'student',
@@ -16,10 +12,6 @@ const PLACEHOLDER_NAMES = new Set([
 
 /**
  * Up to two initials for a user.
- *
- * Prefers the display name (first + last initial, or the first two letters of
- * a single-word name). Falls back to the email local part, then to "?" so the
- * avatar is never blank.
  */
 export function initialsFrom(name?: string | null, email?: string | null): string {
   const cleaned = (name ?? '').trim();
@@ -37,8 +29,7 @@ export function initialsFrom(name?: string | null, email?: string | null): strin
     }
   }
 
-  // Fall back to the email local part. Split on the usual separators so
-  // "jaisev.sachdev@u.nus.edu" gives JS rather than JA.
+  // Fall back to the email local part. Split on the usual separators so "jaisev.sachdev@u.nus.edu" gives JS rather than JA.
   const local = (email ?? '').trim().split('@')[0];
   const emailParts = local
     .split(/[._\-+]+/)
@@ -53,11 +44,7 @@ export function initialsFrom(name?: string | null, email?: string | null): strin
   return '?';
 }
 
-/**
- * Tailwind classes for the avatar background and text, chosen deterministically
- * from a seed so a given user always gets the same colour across sessions and
- * devices. Tuned for the light theme introduced in PR #34.
- */
+
 const AVATAR_COLOURS = [
   'bg-teal-100 text-teal-900',
   'bg-sky-100 text-sky-900',
@@ -73,7 +60,7 @@ export function avatarColour(seed?: string | null): string {
   const key = (seed ?? '').trim().toLowerCase();
   if (!key) return AVATAR_COLOURS[0];
 
-  // Simple deterministic string hash (djb2-ish). Not security-sensitive.
+  // Simple deterministic string hash (djb2-ish)
   let hash = 0;
   for (let i = 0; i < key.length; i++) {
     hash = (hash * 31 + key.charCodeAt(i)) >>> 0;

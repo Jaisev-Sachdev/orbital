@@ -1,15 +1,4 @@
-// Maps each NUS primary major to the module-code prefixes that are plausibly
-// relevant to it. Used to build the candidate pool for AI recommendations so a
-// student is not offered modules from an unrelated department.
-//
-// Keys must match src/config/nusMajors.ts exactly. modulePool.test.ts asserts
-// that every major has an entry here, so adding a major without a prefix list
-// fails the build.
-//
-// These lists are intentionally broad rather than exhaustive: the pool is a
-// shortlist handed to the model, not an eligibility ruling. If a major is
-// missing or its prefixes match nothing, the caller falls back to an
-// unfiltered pool rather than returning zero modules.
+// Maps each NUS primary major to the module-code prefixes that are plausibly relevant to it.
 
 export const MAJOR_MODULE_PREFIXES: Record<string, string[]> = {
   // ── School of Computing ──

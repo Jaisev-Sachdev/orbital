@@ -38,12 +38,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
 
   const completedCodes = profile.completedMods.map(m => m.moduleCode);
 
-  // 2. Build the candidate pool, scoped to the student's declared major.
-  //
-  // This previously inferred prefixes from the student's *completed* modules,
-  // which meant anyone who had taken a module outside their department was
-  // offered a pool from that department instead of their own. MS3 user testing
-  // surfaced it: a Statistics and Economics student was recommended CS modules.
+  // build the candidate pool, scoped to the student's declared major
   const poolWhere = buildModulePoolWhere({ major: profile.major, completedCodes });
 
   let availableModules = await prisma.module.findMany({
@@ -52,9 +47,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
     orderBy: { moduleCode: 'asc' }
   });
 
-  // If the major-scoped pool is empty (unmapped major, or a prefix list that
-  // matches nothing in the synced NUSMods data), fall back to an unfiltered
-  // pool. A generic recommendation is a better failure mode than none.
+  // If the major-scoped pool is empty, fall back to an unfiltered pool
   if (availableModules.length === 0) {
     availableModules = await prisma.module.findMany({
       where: widenModulePoolWhere(poolWhere),
@@ -63,7 +56,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
     });
   }
 
-  // 3. Build the prompt — include goals if provided
+  // Build the prompt, include goals if provided
   const prompt = `You are an academic advisor for NUS (National University of Singapore).
 
 Student profile:
@@ -91,14 +84,14 @@ Respond in JSON only. No explanation outside the JSON. Use this exact format:
 ]`;
 
   try {
-    // 4. Call the Anthropic API
+    // Call the Anthropic API
     const message = await client.messages.create({
       model: 'claude-sonnet-4-5',
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }]
     });
 
-    // 5. Parse and return the recommendations
+    // Parse and return the recommendations
     const textBlock = message.content.find((b: any) => b?.type === 'text');
     const responseText = textBlock?.type === 'text' ? String(textBlock.text) : '';
 

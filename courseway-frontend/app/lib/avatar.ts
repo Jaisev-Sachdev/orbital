@@ -37,8 +37,18 @@ export function initialsFrom(name?: string | null, email?: string | null): strin
     }
   }
 
-  const local = (email ?? '').trim().split('@')[0].replace(/[^\p{L}\p{N}]/gu, '');
-  if (local) return local.slice(0, 2).toUpperCase();
+  // Fall back to the email local part. Split on the usual separators so
+  // "jaisev.sachdev@u.nus.edu" gives JS rather than JA.
+  const local = (email ?? '').trim().split('@')[0];
+  const emailParts = local
+    .split(/[._\-+]+/)
+    .map(part => part.replace(/[^\p{L}\p{N}]/gu, ''))
+    .filter(Boolean);
+
+  if (emailParts.length > 1) {
+    return (emailParts[0][0] + emailParts[emailParts.length - 1][0]).toUpperCase();
+  }
+  if (emailParts.length === 1) return emailParts[0].slice(0, 2).toUpperCase();
 
   return '?';
 }

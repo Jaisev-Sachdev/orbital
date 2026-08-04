@@ -12,6 +12,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
   const navigate = useNavigate()
   const { login } = useAuth()
 
+  const [name, setName]                     = useState("")
   const [email, setEmail]                   = useState("")
   const [password, setPassword]             = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -36,8 +37,8 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
     }
 
     try {
- 
-      await api.post("/auth/register", { email, password })
+      // name is optional; the backend stores null when it is blank.
+      await api.post("/auth/register", { name, email, password })
       const { data } = await api.post("/auth/login", { email, password })
       login(data.token, email)
       navigate("/onboarding")
@@ -71,6 +72,23 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
+
+            <div className="space-y-2">
+              <Label htmlFor="name" style={{ color: "rgba(10,22,40,0.8)" }}>Full name</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Jaisev Sachdev"
+                autoComplete="name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                style={{
+                  backgroundColor: "var(--cw-navy)",
+                  borderColor: "var(--cw-navy-border)",
+                  color: "var(--cw-white)",
+                }}
+              />
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="email" style={{ color: "rgba(10,22,40,0.8)" }}>Email</Label>

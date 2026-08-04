@@ -31,9 +31,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
 
-  // Letter avatar derived from the display name given at signup, falling back
-  // to the email local part. Colour is seeded from the email so it stays the
-  // same for a user across sessions and devices.
+  // Letter avatar derived from the display name given at signup
   const initials = initialsFrom(user.name, user.email)
   const colour = avatarColour(user.email)
 

@@ -8,9 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Label } from "~/components/ui/label"
 import { ProtectedRoute, useAuth } from "~/context/AuthContext"
 import api from "~/lib/api"
-import { NUS_MAJORS } from "~/lib/nusMajors" // <-- IMPORT THE MAJORS LIST HERE
+import { NUS_MAJORS } from "~/lib/nusMajors" 
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ModuleSearchResult {
   moduleCode: string
@@ -18,7 +17,6 @@ interface ModuleSearchResult {
   credits: number
 }
 
-// ─── Step indicator ───────────────────────────────────────────────────────────
 
 function StepBar({ current }: { current: number }) {
   const steps = ["Profile", "Modules", "Goals"]
@@ -69,7 +67,6 @@ function StepBar({ current }: { current: number }) {
   )
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 function OnboardingContent() {
   const navigate = useNavigate()
@@ -91,7 +88,6 @@ function OnboardingContent() {
   const [errorMessage, setErrorMessage] = useState("")
   const [isLoading, setIsLoading]       = useState(false)
 
-  // Debounced module search
   useEffect(() => {
     if (moduleSearch.length < 2) {
       setSearchResults([])
@@ -103,7 +99,7 @@ function OnboardingContent() {
         const { data } = await api.get(`/modules?search=${encodeURIComponent(moduleSearch)}`)
         setSearchResults(data.modules || [])
       } catch {
-        // silent — user just sees no results
+        
       } finally {
         setIsSearching(false)
       }
@@ -136,7 +132,7 @@ function OnboardingContent() {
     try {
       const yearOfStudyInt = parseInt(formData.year.replace(/\D/g, "")) || 1
 
-      // 1. Save profile
+     
       await api.post("/profile", {
         major:       formData.major,
         faculty:     formData.faculty,
@@ -144,12 +140,12 @@ function OnboardingContent() {
         yearOfStudy: yearOfStudyInt,
       })
 
-      // 2. Save completed modules
+      
       if (formData.modules.length > 0) {
         await api.post("/profile/modules", { moduleCodes: formData.modules })
       }
 
-      // 3. Save goals to localStorage
+      
       localStorage.setItem("courseGoals", formData.goals)
 
       await refreshProfile()
@@ -166,7 +162,7 @@ function OnboardingContent() {
     }
   }
 
-  // ── Render ──
+  
 
   return (
     <main

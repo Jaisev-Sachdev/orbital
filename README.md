@@ -1007,17 +1007,13 @@ The two highest-severity findings (1 and 2) are user-facing defects rather than 
 - [ ] Workload clash alerts: not attempted beyond the existing MC/hour overload flag from MS2
 - [ ] AI what-if simulator: not attempted
 - [ ] Frontend automated tests (React Testing Library): not completed, backend suite only
-- [ ] Splashdown poster and demo video
 
 ### Splashdown: Final Submission (13 August 2026)
 
 Scope agreed by the team after reviewing the MS3 user testing results. Each item names the finding that motivates it, where one exists.
 
-- [ ] **Loading indicator on first request** (Finding 2, High). Render's free tier spins the backend down after 15 minutes of inactivity, so the first request takes 15-60 seconds with no feedback and reads as a hang. Add a spinner or skeleton plus an explicit "waking up the server" message.
-- [ ] **Major-aware AI recommendations** (Finding 1, High). `POST /recommendations` builds its candidate pool from module-code prefixes inferred from the student's *completed* modules; the declared `major` only reaches Claude as prompt text and never constrains the pool. A Statistics and Economics tester was therefore recommended CS modules. Filter the pool by declared major, mirroring the gate already applied to the requirements tracker.
-- [ ] **AI workload insights** (Finding 7). The workload view reports MCs and hours per semester but does not interpret them. Add comparative signals across semesters (which is heaviest, which is project-heavy) rather than per-semester totals alone.
-- [ ] **Richer AI recommendation explanations**. Extends the feature testers rated highest: "the description of WHY to take each of the modules was so accurate".
-- [ ] **Profile picture**. Team-initiated polish rather than a user-testing finding. Requires an upload endpoint and a storage target, as the stack currently persists no binary data.
+- [x] **Major-aware AI recommendations** (Finding 1, High). `POST /recommendations` builds its candidate pool from module-code prefixes inferred from the student's *completed* modules; the declared `major` only reaches Claude as prompt text and never constrains the pool. A Statistics and Economics tester was therefore recommended CS modules. Filter the pool by declared major, mirroring the gate already applied to the requirements tracker.
+- [x] **Profile picture**. Team-initiated polish rather than a user-testing finding. Requires an upload endpoint and a storage target, as the stack currently persists no binary data.
 
 ---
 

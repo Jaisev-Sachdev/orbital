@@ -44,16 +44,7 @@ export interface ExistingSlot {
 
 /**
  * gradRequirements.json's module_list categories only enumerate the
- * "canonical" code for each requirement slot (e.g. the S-track variant
- * CS1101S/CS2030S/CS2040S/CS1231S). NUS offers standard-track equivalents
- * that satisfy the exact same degree requirement (CS2030/CS2040 for the
- * S-variants; CS1010/CS1010S/CS1010E/CS1010X as alternates to CS1101S).
- * Without this map, a student who took the non-S version would show the
- * canonical code as still missing (duplicate recommendations) AND have
- * their completed module misclassified via the CS/IFS/CP prefix fallback
- * in classifyModule, since it isn't literally in the foundation list.
- *
- * Maps alternate code -> canonical code used in gradRequirements.json.
+ * "canonical" code for each requirement slot
  */
 const MODULE_EQUIVALENTS: Record<string, string> = {
   CS1010S: 'CS1101S',
@@ -113,8 +104,7 @@ export function computeRequirementsProgress(
   gradRequirements: GradRequirements,
   plannedModules: PlannedModule[]
 ) {
-  // Canonicalized so a completed alternate (e.g. CS1010S) satisfies its
-  // canonical requirement slot (CS1101S) in module_list matching below.
+  // Canonicalized so a completed alternate (e.g. CS1010S) satisfies its canonical requirement slot (CS1101S) in module_list matching below.
   const plannedCodes = new Set(plannedModules.map(m => canonicalize(m.moduleCode)));
   const totalMCsPlanned = plannedModules.reduce((sum, m) => sum + (m.credits ?? 0), 0);
 
@@ -237,8 +227,7 @@ export function buildFourYearPlan(
   plannedModules: PlannedModule[],
   candidateModules: CandidateModule[]
 ): FourYearPlanResult {
-  // Canonicalized so an already-completed alternate (e.g. CS2030) clears
-  // its canonical slot (CS2030S) instead of being recommended as a
+  // Canonicalized so an already-completed alternate (e.g. CS2030) clears its canonical slot (CS2030S) instead of being recommended as a
   // duplicate later in the plan.
   const plannedCodes = new Set(plannedModules.map(m => canonicalize(m.moduleCode)));
   const candidateMap = new Map(candidateModules.map(m => [m.moduleCode, m]));

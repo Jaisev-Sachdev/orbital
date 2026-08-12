@@ -24,21 +24,16 @@ const OTHER_LABEL_MAX_LENGTH = 48;
 
 /**
  * Produces a short, display-friendly label for an OTHER-type prerequisite
- * clause (grade/level conditions the parser can't structurally resolve into
- * MODULE/AND/OR/N_OF nodes — e.g. "must have completed GCE A-Level H2
- * Mathematics or equivalent at a grade of..."). Compact UI contexts (graph
- * nodes, chips) were previously stuck rendering the full `text` and
- * truncating it blindly mid-word, since no short form existed. The full
- * clause remains available on `text` for a tooltip or expanded view.
- */
+
+ **/
+
 function summarizeOtherText(text: string): string {
   const trimmed = text.trim();
   if (trimmed.length <= OTHER_LABEL_MAX_LENGTH) return trimmed;
 
   const truncated = trimmed.slice(0, OTHER_LABEL_MAX_LENGTH);
   const lastSpace = truncated.lastIndexOf(' ');
-  // Only break on a word boundary if it doesn't cut off too much of the
-  // available budget — otherwise just hard-truncate.
+  // Only break on a word boundary if it doesn't cut off too much of the available budget
   const safe = lastSpace > 20 ? truncated.slice(0, lastSpace) : truncated;
   return `${safe.trim()}…`;
 }

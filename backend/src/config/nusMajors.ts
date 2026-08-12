@@ -1,6 +1,4 @@
-// Canonical list of NUS primary majors. Mirrors the frontend list at
-// courseway-frontend/app/lib/nusMajors.ts — keep both in sync if either changes.
-// Primary majors only; double majors are out of scope (too many combinations).
+// Canonical list of NUS primary majors. Mirrors the frontend list
 export const NUS_MAJORS = [
   // ── School of Computing ──
   'Business Analytics',

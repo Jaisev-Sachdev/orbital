@@ -1,29 +1,11 @@
-/**
- * Courseway — app.css
- *
- * Replaces shadcn's default light/grey tokens with the Courseway brand:
- *   Navy    #0A1628  — text / dark accents
- *   Teal    #00C9A7  — accent / interactive
- *   White   #FFFFFF  — backgrounds
- *   Amber   #FFB347  — warnings only
- *
- * Light mode: --cw-navy now maps to the page background token, and
- * --cw-white maps to foreground text — the variable names are kept as-is
- * to avoid touching every component that references them.
- * shadcn components read from these CSS vars — so swapping the values here
- * re-skins everything automatically.
- */
-
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* ── Google Fonts: Inter (UI) + JetBrains Mono (module codes) ── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
-/* ── Tailwind theme aliases → CSS vars ── */
 @theme inline {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -48,7 +30,6 @@
   --color-input:               var(--input);
   --color-ring:                var(--ring);
 
-  /* Sidebar */
   --color-sidebar:                     var(--sidebar);
   --color-sidebar-foreground:          var(--sidebar-foreground);
   --color-sidebar-primary:             var(--sidebar-primary);
@@ -65,23 +46,19 @@
   --radius-2xl: calc(var(--radius) * 1.8);
 }
 
-/* ── Courseway brand tokens (light mode) ── */
 :root {
   color-scheme: light;
 
-  /* Core palette — names unchanged, values flipped for light mode */
-  --cw-navy:   #FFFFFF;   /* was dark background, now the light background */
-  --cw-teal:   #00A388;   /* slightly deepened for contrast on white */
-  --cw-white:  #0A1628;   /* was light text, now the dark foreground text */
-  --cw-amber:  #B8720A;   /* deepened for contrast on white */
+  --cw-navy:   #FFFFFF;   
+  --cw-teal:   #00A388;   
+  --cw-white:  #0A1628;  
+  --cw-amber:  #B8720A;  
 
-  /* Derived shades */
-  --cw-navy-light:  #F7F9FC;   /* cards, elevated surfaces */
-  --cw-navy-border: #E2E8F0;   /* subtle borders */
-  --cw-teal-dim:    #00C9A7;   /* teal hover (brighter than base on light bg) */
-  --cw-teal-glow:   rgba(0, 163, 136, 0.10); /* teal bg tint */
+  --cw-navy-light:  #F7F9FC;   
+  --cw-navy-border: #E2E8F0;  
+  --cw-teal-dim:    #00C9A7;  
+  --cw-teal-glow:   rgba(0, 163, 136, 0.10);
 
-  /* shadcn semantic tokens → Courseway palette */
   --background:          var(--cw-navy);
   --foreground:          var(--cw-white);
 
@@ -91,7 +68,6 @@
   --popover:             var(--cw-navy-light);
   --popover-foreground:  var(--cw-white);
 
-  /* PRIMARY = teal (buttons, links, badges) */
   --primary:             var(--cw-teal);
   --primary-foreground:  #FFFFFF;
 
@@ -112,7 +88,6 @@
 
   --radius: 0.625rem;
 
-  /* Sidebar — subtly distinct from background */
   --sidebar:                    #F7F9FC;
   --sidebar-foreground:         var(--cw-white);
   --sidebar-primary:            var(--cw-teal);
@@ -123,7 +98,6 @@
   --sidebar-ring:               var(--cw-teal);
 }
 
-/* ── Base styles ── */
 html,
 body {
   background-color: var(--cw-navy);
@@ -141,9 +115,6 @@ body {
   }
 }
 
-/* ── Courseway utility classes ── */
-
-/* Module code — always JetBrains Mono */
 .module-code {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 0.8125rem;
@@ -151,7 +122,6 @@ body {
   letter-spacing: 0.03em;
 }
 
-/* Teal chip/badge — used for module codes throughout the app */
 .module-chip {
   display: inline-flex;
   align-items: center;
@@ -172,7 +142,6 @@ body {
   border-color: rgba(0, 163, 136, 0.4);
 }
 
-/* Step progress bar — used in onboarding */
 .step-connector {
   flex: 1;
   height: 2px;
@@ -185,7 +154,6 @@ body {
   background: var(--cw-teal);
 }
 
-/* Subtle card highlight on hover */
 .card-hover {
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
@@ -195,7 +163,6 @@ body {
   box-shadow: 0 0 0 1px rgba(0, 163, 136, 0.12), 0 4px 16px rgba(10, 22, 40, 0.06);
 }
 
-/* Warning/amber — use sparingly */
 .text-warning { color: var(--cw-amber); }
 .bg-warning    { background: rgba(184, 114, 10, 0.10); }
 .border-warning{ border-color: rgba(184, 114, 10, 0.35); }

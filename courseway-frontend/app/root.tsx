@@ -1,12 +1,3 @@
-/**
- * root.tsx — App shell
- *
- * Changes from original:
- *   - Wraps <Outlet> in <AuthProvider> so every route gets auth context
- *   - Removed Google Fonts link tag (fonts now imported in app.css)
- *   - Kept ErrorBoundary unchanged
- */
-
 import {
   isRouteErrorResponse,
   Links,
